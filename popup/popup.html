@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>SHIFT</title>
     <style>
-        /* Все ваши стили остаются здесь без изменений */
+        /* Переменные и стили, адаптированные из вашего файла */
         :root {
             --dbm-bg-color: #F9F9F9;
             --dbm-panel-bg: #ffffff;
@@ -18,6 +18,7 @@
             --dbm-radius-inner: 12px;
             --dbm-transition: all 0.2s ease-in-out;
         }
+
         body {
             font-family: 'Onest', sans-serif;
             background-color: var(--dbm-bg-color);
@@ -25,11 +26,17 @@
             margin: 0;
             color: var(--dbm-text-primary);
         }
+
         * { box-sizing: border-box; }
         .hidden { display: none !important; }
+
+        /* --- Шапка --- */
         .popup-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px; border-bottom: 1px solid #F3F4F6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #F3F4F6;
         }
         .header-logo { display: flex; align-items: center; gap: 8px; font-weight: 500; }
         .header-logo img { width: 24px; height: 24px; }
@@ -39,7 +46,11 @@
             background: none; border: none; line-height: 1;
         }
         .popup-close-btn:hover { color: var(--dbm-text-primary); }
+        
+        /* --- Основной контент --- */
         .popup-content { padding: 30px; }
+
+        /* --- Форма авторизации --- */
         .tabs { display: flex; border-bottom: 1px solid #F3F4F6; margin-bottom: 24px; }
         .tab-btn {
             flex: 1; padding: 14px; border: none; background: none;
@@ -51,6 +62,7 @@
             content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
             height: 2px; background-color: var(--dbm-primary-color);
         }
+
         .dbm-form-group {
             margin-bottom: 20px; display: flex; flex-direction: column; text-align: left;
         }
@@ -71,6 +83,7 @@
             width: 20px; height: 20px; background-size: contain;
             border: none; background-color: transparent;
         }
+
         .strength-meter {
             height: 6px; background-color: #eee; border-radius: 3px;
             margin-top: 8px; display: flex;
@@ -79,9 +92,11 @@
         .strength-bar.weak { background-color: #EF4444; }
         .strength-bar.medium { background-color: #F59E0B; }
         .strength-bar.strong { background-color: #10B981; }
+
         .checkbox-group { display: flex; align-items: center; margin-bottom: 12px; text-align: left; }
         .checkbox-group label { font-size: 14px; color: var(--dbm-text-secondary); margin-left: 10px; }
         .checkbox-group a { color: var(--dbm-text-primary); text-decoration: underline; }
+
         .dbm-btn {
             width: 100%; padding: 14px 28px; border-radius: var(--dbm-radius-inner);
             cursor: pointer; text-align: center; font-weight: 500;
@@ -90,14 +105,18 @@
         .dbm-btn-primary { background-color: var(--dbm-primary-color); color: white; }
         .dbm-btn-primary:hover:not(:disabled) { background-color: var(--dbm-primary-hover); }
         .dbm-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
         .error-display {
             color: var(--dbm-danger-color); font-size: 14px;
             margin-bottom: 15px; background-color: rgba(239, 68, 68, 0.1);
             padding: 10px; border-radius: 8px;
         }
+        
+        /* --- Вид для залогиненного пользователя --- */
         #app-view .user-info { margin-bottom: 20px; text-align: center; }
         #app-view .user-name { font-size: 20px; font-weight: 500; margin: 0; }
         #app-view .user-email { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 4px; }
+        
         .subscription-card {
             background-color: var(--dbm-input-bg);
             border-radius: var(--dbm-radius-inner);
@@ -105,6 +124,7 @@
         }
         .subscription-card .plan-name { font-weight: 500; }
         .subscription-card .expiry-date { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 8px; }
+        
         #app-view .action-buttons { display: flex; flex-direction: column; gap: 12px; }
         .dbm-btn-secondary { background-color: #F3F4F6; color: var(--dbm-text-primary); }
         .dbm-btn-secondary:hover { background-color: #e5e7eb; }
@@ -118,12 +138,14 @@
         <div class="header-version" id="version-display"></div>
         <button class="popup-close-btn" id="close-btn">&times;</button>
     </div>
+
     <div class="popup-content">
         <div id="auth-container">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="login-form">Вход</button>
                 <button class="tab-btn" data-tab="register-form">Регистрация</button>
             </div>
+
             <div id="login-form">
                 <div id="login-error" class="error-display hidden"></div>
                 <div class="dbm-form-group">
@@ -139,6 +161,7 @@
                 </div>
                 <button id="login-btn" class="dbm-btn dbm-btn-primary" disabled>Войти</button>
             </div>
+
             <div id="register-form" class="hidden">
                 <div id="register-error" class="error-display hidden"></div>
                 <div class="dbm-form-group">
@@ -168,6 +191,7 @@
                 <button id="register-btn" class="dbm-btn dbm-btn-primary" disabled>Зарегистрироваться</button>
             </div>
         </div>
+
         <div id="app-view" class="hidden">
             <div class="user-info">
                 <h3 id="user-name" class="user-name"></h3>
@@ -186,9 +210,11 @@
         </div>
     </div>
 
+    <!-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ДОБАВЛЯЕМ ПОДКЛЮЧЕНИЕ СКРИПТОВ -->
     <script src="../supabase.js"></script>
     <script src="config.js"></script>
     <script src="popup.js"></script>
 
 </body>
 </html>
+
