@@ -31,13 +31,55 @@ function waitForElement(selector) {
 }
 
 /**
+ * Ожидает загрузки глобальных переменных Tilda
+ * @returns {Promise} - Promise, который разрешается когда все переменные загружены
+ */
+function waitForTildaGlobals() {
+    return new Promise((resolve, reject) => {
+        console.log('[CONTENT] Ожидание загрузки глобальных переменных Tilda...');
+        
+        let attempts = 0;
+        const maxAttempts = 50; // 5 секунд максимум
+        const interval = 100; // проверяем каждые 100мс
+        
+        const checkGlobals = () => {
+            attempts++;
+            
+            // Проверяем tp__addRecord, но не критично если его нет
+            const tpAddRecordLoaded = typeof window.tp__addRecord !== 'undefined';
+            
+            if (tpAddRecordLoaded) {
+                console.log('[CONTENT] tp__addRecord загружен после', attempts, 'попыток');
+            } else if (attempts >= maxAttempts) {
+                console.warn('[CONTENT] tp__addRecord не загрузился за', maxAttempts, 'попыток, продолжаем без него');
+            }
+            
+            // Создаем dbmBlocks если его нет
+            if (typeof window.dbmBlocks === 'undefined') {
+                console.log('[CONTENT] Создаем dbmBlocks массив...');
+                window.dbmBlocks = [];
+            }
+            
+            // Разрешаем Promise независимо от tp__addRecord
+            resolve();
+        };
+        
+        checkGlobals();
+    });
+}
+
+/**
  * Главная асинхронная функция, которая запускает всю логику расширения.
  */
 async function main() {
     console.log('SHIFT Extension: Content script запущен.');
     
     try {
-        // 1. Ждем, пока Tilda полностью отрисует свою библиотеку блоков.
+        // Сначала ждем загрузки глобальных переменных Tilda
+        console.log('[CONTENT] Ожидание загрузки Tilda API...');
+        await waitForTildaGlobals();
+        
+        // Затем ждем появления элементов Tilda
         console.log('[CONTENT] Ожидание элементов Tilda...');
         const tildaLibraryContainer = await waitForElement('.tp-library__body');
         const rightSideContainer = await waitForElement('.tp-library-rightside');
@@ -124,84 +166,72 @@ function renderShiftPanel(libraryContainer, rightSideContainer, userStatus, allS
     }
     
     try {
-
-    // Удаляем старые версии панели, если они есть, чтобы избежать дублирования.
-    const oldCategory = document.getElementById('shift-category-container');
-    if (oldCategory) oldCategory.remove();
-    const oldBlocks = document.getElementById('tplslist-shift-mods');
-    if (oldBlocks) oldBlocks.remove();
-
-    // --- Создание категории в левой панели ---
-    const categoryHTML = `
-        <div class="tp-library__type-body" id="shift-category-container" data-library-type-id="-shift-mods">
-            <div class="tp-library__type">
-                <div class="tp-library__type-title-wrapper">
-                    <div class="tp-library__type-title" style="font-weight: 600;">SHIFT Модификации</div>
-                </div>
-                <div class="tp-library__type-icon-wrapper">
-                    <div class="tp-library__type-icon-plus">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="11" viewBox="0 0 20 11"><path d="m.83422852.66864726 9.15974111 9.15974112L19.2407318.58162626" stroke="#000" opacity=".9" fill="none"/></svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    libraryContainer.insertAdjacentHTML('afterbegin', categoryHTML);
-
-    // --- Создание контейнера для карточек в правой панели ---
-    const shiftBlocksContainerHTML = `
-        <div class="tp-library__tpls-list-body" id="tplslist-shift-mods" data-tpls-for-type="-shift-mods">
-            <div class="tp-library__tpls-list-body__container">
-                <!-- Сюда будут вставлены карточки решений -->
-            </div>
-        </div>
-    `;
-    rightSideContainer.insertAdjacentHTML('beforeend', shiftBlocksContainerHTML);
-    const blocksContainer = rightSideContainer.querySelector('#tplslist-shift-mods .tp-library__tpls-list-body__container');
-
-    // --- Генерация и вставка карточек решений ---
-    // Проверяем, что конфиг загружен
-    if (typeof shiftSolutionsConfig === 'undefined') {
-        console.error('SHIFT: shiftSolutionsConfig не найден. Убедитесь, что content/config.js загружен перед content.js');
-        return;
-    }
-    
-    shiftSolutionsConfig.forEach(configBlock => {
-        const solutionFromDB = allSolutions.find(s => s.solution_code === configBlock.solutionCode);
-        if (!solutionFromDB) {
-            console.warn(`SHIFT: Решение "${configBlock.solutionCode}" из config.js не найдено в базе данных.`);
-            return;
-        }
-
-        const hasAccess = (userStatus === 'advanced' || solutionFromDB.is_free);
-        const isFreeTier = solutionFromDB.is_free;
-        const icon = configBlock.img || 'https://static.tildacdn.com/lib/tscripts/tplicons/tpl_html.png';
-        const lockIcon = hasAccess ? '' : '🔒';
-        const cardClass = hasAccess ? '' : 'locked';
-
-        const blockCardHTML = `
-            <div class="tp-library__tpl-body" data-solution-code="${configBlock.solutionCode}" data-tilda-block-id="${configBlock.tildaBlockId}">
-                <div class="tp-library__tpl-wrapper ${cardClass}">
-                    <div class="tp-library__tpl-icon__wrapper">
-                        <img class="tp-library__tpl-icon" src="${icon}">
-                    </div>
-                    <div class="tp-library__tpl-bottom-wrapper">
-                        <div class="tp-library__tpl-caption">
-                            <span class="tp-library__tpl-title">${lockIcon} ${configBlock.title}</span>
-                        </div>
-                    </div>
-                    <div class="solution-tier" style="${isFreeTier ? '' : 'background-color: #D1FAE5; color: #065F46;'}">
-                        ${isFreeTier ? 'Бесплатно' : 'Продвинутый'}
-                    </div>
-                </div>
-            </div>
-        `;
-        blocksContainer.insertAdjacentHTML('beforeend', blockCardHTML);
-    });
-
-        // "Оживляем" все элементы
-        addPanelListeners();
-        console.log('[CONTENT] renderShiftPanel завершена успешно');
+        console.log('[CONTENT] Интеграция с Tilda через dbmBlocks...');
+        
+        // Загружаем и выполняем скрипт с блоками SHIFT
+        const script = document.createElement('script');
+        script.src = chrome.runtime.getURL('content/tilda-blocks.js');
+        script.onload = function() {
+            console.log('[CONTENT] Скрипт tilda-blocks.js загружен');
+            
+            // Создаем dbmBlocks если его нет
+            if (typeof window.dbmBlocks === 'undefined') {
+                console.log('[CONTENT] Создаем dbmBlocks массив...');
+                window.dbmBlocks = [];
+            }
+            
+            // Проверяем, что функция dbmCreateShiftBlocks доступна
+            if (typeof dbmCreateShiftBlocks === 'function') {
+                console.log('[CONTENT] Создаем блоки SHIFT для Tilda...');
+                
+                // Сохраняем данные пользователя в глобальной переменной для использования в блоках
+                window.shiftUserStatus = userStatus;
+                window.shiftAllSolutions = allSolutions;
+                
+                // Ждем загрузки Tilda API перед созданием блоков
+                waitForTildaAPI().then(() => {
+                    console.log('[CONTENT] Tilda API готов, создаем блоки SHIFT...');
+                    dbmCreateShiftBlocks();
+                    
+                    // Принудительно обновляем библиотеку Tilda
+                    setTimeout(() => {
+                        if (typeof tp__library__addEvents === 'function') {
+                            console.log('[CONTENT] Обновляем события библиотеки Tilda');
+                            tp__library__addEvents();
+                        }
+                        
+                        if (typeof tp__library__addEvents__toCards === 'function') {
+                            console.log('[CONTENT] Обновляем события карточек Tilda');
+                            tp__library__addEvents__toCards();
+                        }
+                        
+                        // Попробуем найти и обновить библиотеку
+                        if (typeof tp__library__hide === 'function') {
+                            console.log('[CONTENT] Обновляем библиотеку Tilda');
+                            tp__library__hide();
+                            setTimeout(() => {
+                                // Показываем библиотеку снова
+                                const libraryBtn = document.querySelector('[data-tp-library]');
+                                if (libraryBtn) {
+                                    libraryBtn.click();
+                                }
+                            }, 100);
+                        }
+                    }, 500);
+                    
+                    console.log('[CONTENT] Блоки SHIFT успешно интегрированы в Tilda!');
+                }).catch(error => {
+                    console.error('[CONTENT] Ошибка при ожидании Tilda API для создания блоков:', error);
+                });
+            } else {
+                console.error('[CONTENT] Функция dbmCreateShiftBlocks не найдена');
+            }
+        };
+        script.onerror = function() {
+            console.error('[CONTENT] Ошибка загрузки tilda-blocks.js');
+        };
+        
+        document.head.appendChild(script);
         
     } catch (error) {
         console.error('[CONTENT] Ошибка в renderShiftPanel:', error);
@@ -277,6 +307,127 @@ function addPanelListeners() {
     
     } catch (error) {
         console.error('[CONTENT] Ошибка в addPanelListeners:', error);
+    }
+}
+
+/**
+ * Добавляет блок Tilda с использованием tp__addRecord
+ * @param {Object} solution - Объект решения из базы данных
+ */
+function dbmAddTildaBlock(solution) {
+    console.log('[CONTENT] addTildaBlock вызвана для:', solution);
+    
+    try {
+        // Определяем код блока на основе solution_code
+        let blockCode = '';
+        switch (solution.solution_code) {
+            case 'super-slider':
+                blockCode = 'SHF001';
+                break;
+            case 'super-grid':
+                blockCode = 'SHF002';
+                break;
+            case 'grid-stacks':
+                blockCode = 'SHF003';
+                break;
+            case 'custom-html':
+                blockCode = 'SHF004';
+                break;
+            default:
+                console.error('[CONTENT] Неизвестный solution_code:', solution.solution_code);
+                return;
+        }
+        
+        console.log('[CONTENT] Добавляем блок Tilda с кодом:', blockCode);
+        
+        // Ждем загрузки Tilda API и добавляем блок
+        waitForTildaAPI().then(() => {
+            if (typeof tp__addRecord === 'function') {
+                tp__addRecord(blockCode);
+                console.log('[CONTENT] Блок успешно добавлен:', blockCode);
+            } else {
+                console.warn('[CONTENT] tp__addRecord недоступен, блок не может быть добавлен автоматически');
+                console.log('[CONTENT] Попробуйте открыть библиотеку блоков Tilda и добавить блок вручную');
+            }
+            
+            // Загружаем соответствующий скрипт решения в любом случае
+            dbmLoadSolutionScript(solution.solution_code);
+        }).catch(error => {
+            console.error('[CONTENT] Ошибка при ожидании Tilda API:', error);
+        });
+        
+    } catch (error) {
+        console.error('[CONTENT] Ошибка в addTildaBlock:', error);
+    }
+}
+
+/**
+ * Ожидает загрузки Tilda API
+ * @returns {Promise} - Promise, который разрешается когда API загружен
+ */
+function waitForTildaAPI() {
+    return new Promise((resolve, reject) => {
+        console.log('[CONTENT] Ожидание загрузки Tilda API...');
+        
+        // Если API уже доступен
+        if (typeof tp__addRecord === 'function') {
+            console.log('[CONTENT] Tilda API уже загружен');
+            resolve();
+            return;
+        }
+        
+        let attempts = 0;
+        const maxAttempts = 30; // 3 секунды максимум
+        const interval = 100; // проверяем каждые 100мс
+        
+        const checkAPI = () => {
+            attempts++;
+            
+            if (typeof tp__addRecord === 'function') {
+                console.log('[CONTENT] Tilda API загружен после', attempts, 'попыток');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                console.warn('[CONTENT] Tilda API не загрузился за', maxAttempts, 'попыток, продолжаем без него');
+                // Разрешаем Promise даже если API не загрузился
+                resolve();
+            } else {
+                setTimeout(checkAPI, interval);
+            }
+        };
+        
+        checkAPI();
+    });
+}
+
+/**
+ * Загружает скрипт решения
+ * @param {string} solutionCode - Код решения
+ */
+function dbmLoadSolutionScript(solutionCode) {
+    console.log('[CONTENT] Загружаем скрипт для решения:', solutionCode);
+    
+    try {
+        const scriptUrl = chrome.runtime.getURL(`solutions/${solutionCode}/${solutionCode}.js`);
+        
+        // Проверяем, не загружен ли уже скрипт
+        if (document.querySelector(`script[src="${scriptUrl}"]`)) {
+            console.log('[CONTENT] Скрипт уже загружен:', solutionCode);
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = scriptUrl;
+        script.onload = function() {
+            console.log('[CONTENT] Скрипт решения загружен:', solutionCode);
+        };
+        script.onerror = function() {
+            console.error('[CONTENT] Ошибка загрузки скрипта:', solutionCode);
+        };
+        
+        document.head.appendChild(script);
+        
+    } catch (error) {
+        console.error('[CONTENT] Ошибка в loadSolutionScript:', error);
     }
 }
 
