@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SHIFT Tilda Mods",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Платформа для модификаций и улучшений Tilda.",
   "permissions": [
     "storage",
@@ -14,10 +14,6 @@
     "https://*.tilda.ws/*",
     "https://*.tilda.ru/*"
   ],
-  "background": {
-    "service_worker": "background/background.js",
-    "type": "module"
-  },
   "content_scripts": [
     {
       "matches": [
@@ -26,11 +22,10 @@
         "*://tilda.ru/page/?pageid=*"
       ],
       "js": [
-        "content/config.js",
-        "content/content.js"
+        "shift.js"
       ],
       "css": [
-        "content/content.css"
+        "shift.css"
       ]
     }
   ],
@@ -44,8 +39,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "solutions/*/*.js",
-        "content/tilda-blocks.js"
+        "shift.js",
+        "shift.css"
       ],
       "matches": [
         "*://tilda.cc/*",
