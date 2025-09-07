@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SHIFT</title>
+    <style>
+        /* Все ваши стили остаются здесь без изменений */
+        :root {
+            --dbm-bg-color: #F9F9F9;
+            --dbm-panel-bg: #ffffff;
+            --dbm-input-bg: #F3F4F6;
+            --dbm-text-primary: #23272c;
+            --dbm-text-secondary: #6B7280;
+            --dbm-primary-color: #23272c;
+            --dbm-primary-hover: #4a515c;
+            --dbm-danger-color: #EF4444;
+            --dbm-radius: 20px;
+            --dbm-radius-inner: 12px;
+            --dbm-transition: all 0.2s ease-in-out;
+        }
+        body {
+            font-family: 'Onest', sans-serif;
+            background-color: var(--dbm-bg-color);
+            width: 380px;
+            margin: 0;
+            color: var(--dbm-text-primary);
+        }
+        * { box-sizing: border-box; }
+        .hidden { display: none !important; }
+        .popup-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; border-bottom: 1px solid #F3F4F6;
+        }
+        .header-logo { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .header-logo img { width: 24px; height: 24px; }
+        .header-version { font-size: 12px; color: var(--dbm-text-secondary); }
+        .popup-close-btn {
+            font-size: 24px; cursor: pointer; color: #aaa;
+            background: none; border: none; line-height: 1;
+        }
+        .popup-close-btn:hover { color: var(--dbm-text-primary); }
+        .popup-content { padding: 30px; }
+        .tabs { display: flex; border-bottom: 1px solid #F3F4F6; margin-bottom: 24px; }
+        .tab-btn {
+            flex: 1; padding: 14px; border: none; background: none;
+            font-size: 16px; font-weight: 500; cursor: pointer;
+            color: var(--dbm-text-secondary); position: relative;
+        }
+        .tab-btn.active { color: var(--dbm-text-primary); }
+        .tab-btn.active::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
+            height: 2px; background-color: var(--dbm-primary-color);
+        }
+        .dbm-form-group {
+            margin-bottom: 20px; display: flex; flex-direction: column; text-align: left;
+        }
+        .dbm-form-group label {
+            font-weight: 500; margin-bottom: 8px; font-size: 14px;
+            color: var(--dbm-text-secondary);
+        }
+        .dbm-form-group input {
+            width: 100%; padding: 12px 16px; border: none;
+            border-radius: var(--dbm-radius-inner); height: 50px;
+            background-color: var(--dbm-input-bg); font-size: 16px;
+            font-family: inherit; color: var(--dbm-text-primary);
+        }
+        .password-wrapper { position: relative; display: flex; align-items: center; }
+        .password-wrapper input { padding-right: 45px; }
+        .toggle-password {
+            position: absolute; right: 15px; cursor: pointer;
+            width: 20px; height: 20px; background-size: contain;
+            border: none; background-color: transparent;
+        }
+        .strength-meter {
+            height: 6px; background-color: #eee; border-radius: 3px;
+            margin-top: 8px; display: flex;
+        }
+        .strength-bar { height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s, background-color 0.3s; }
+        .strength-bar.weak { background-color: #EF4444; }
+        .strength-bar.medium { background-color: #F59E0B; }
+        .strength-bar.strong { background-color: #10B981; }
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 12px; text-align: left; }
+        .checkbox-group label { font-size: 14px; color: var(--dbm-text-secondary); margin-left: 10px; }
+        .checkbox-group a { color: var(--dbm-text-primary); text-decoration: underline; }
+        .dbm-btn {
+            width: 100%; padding: 14px 28px; border-radius: var(--dbm-radius-inner);
+            cursor: pointer; text-align: center; font-weight: 500;
+            border: none; transition: var(--dbm-transition); font-size: 16px; margin-top: 10px;
+        }
+        .dbm-btn-primary { background-color: var(--dbm-primary-color); color: white; }
+        .dbm-btn-primary:hover:not(:disabled) { background-color: var(--dbm-primary-hover); }
+        .dbm-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .error-display {
+            color: var(--dbm-danger-color); font-size: 14px;
+            margin-bottom: 15px; background-color: rgba(239, 68, 68, 0.1);
+            padding: 10px; border-radius: 8px;
+        }
+        #app-view .user-info { margin-bottom: 20px; text-align: center; }
+        #app-view .user-name { font-size: 20px; font-weight: 500; margin: 0; }
+        #app-view .user-email { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 4px; }
+        .subscription-card {
+            background-color: var(--dbm-input-bg);
+            border-radius: var(--dbm-radius-inner);
+            padding: 20px; text-align: center; margin-bottom: 24px;
+        }
+        .subscription-card .plan-name { font-weight: 500; }
+        .subscription-card .expiry-date { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 8px; }
+        #app-view .action-buttons { display: flex; flex-direction: column; gap: 12px; }
+        .dbm-btn-secondary { background-color: #F3F4F6; color: var(--dbm-text-primary); }
+        .dbm-btn-secondary:hover { background-color: #e5e7eb; }
+    </style>
+</head>
+<body>
+    <div class="popup-header">
+        <div class="header-logo">
+            <img src="../assets/icon128.png" alt="Logo"> <span>SHIFT</span>
+        </div>
+        <div class="header-version" id="version-display"></div>
+        <button class="popup-close-btn" id="close-btn">&times;</button>
+    </div>
+    <div class="popup-content">
+        <div id="auth-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="login-form">Вход</button>
+                <button class="tab-btn" data-tab="register-form">Регистрация</button>
+            </div>
+            <div id="login-form">
+                <div id="login-error" class="error-display hidden"></div>
+                <div class="dbm-form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email">
+                </div>
+                <div class="dbm-form-group">
+                    <label for="login-password">Пароль</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="login-password">
+                        <button class="toggle-password" data-target="login-password"></button>
+                    </div>
+                </div>
+                <button id="login-btn" class="dbm-btn dbm-btn-primary" disabled>Войти</button>
+            </div>
+            <div id="register-form" class="hidden">
+                <div id="register-error" class="error-display hidden"></div>
+                <div class="dbm-form-group">
+                    <label for="register-name">Имя и Фамилия</label>
+                    <input type="text" id="register-name">
+                </div>
+                <div class="dbm-form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email">
+                </div>
+                <div class="dbm-form-group">
+                    <label for="register-password">Пароль</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="register-password">
+                        <button class="toggle-password" data-target="register-password"></button>
+                    </div>
+                    <div class="strength-meter"><div id="strength-bar" class="strength-bar"></div></div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="tos-check">
+                    <label for="tos-check">Я согласен с <a href="#" target="_blank">офертой</a></label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="privacy-check">
+                    <label for="privacy-check">Я согласен с <a href="#" target="_blank">политикой конфиденциальности</a></label>
+                </div>
+                <button id="register-btn" class="dbm-btn dbm-btn-primary" disabled>Зарегистрироваться</button>
+            </div>
+        </div>
+        <div id="app-view" class="hidden">
+            <div class="user-info">
+                <h3 id="user-name" class="user-name"></h3>
+                <p id="user-email" class="user-email"></p>
+            </div>
+            <div class="subscription-card">
+                <p>Ваша подписка:</p>
+                <h4 id="plan-name" class="plan-name"></h4>
+                <p id="expiry-date" class="expiry-date"></p>
+            </div>
+            <div class="action-buttons">
+                <button id="manage-btn" class="dbm-btn dbm-btn-primary">Управлять подпиской</button>
+                <button id="support-btn" class="dbm-btn dbm-btn-secondary">Поддержка</button>
+                <button id="logout-btn" class="dbm-btn dbm-btn-secondary">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../supabase.js"></script>
+    <script src="config.js"></script>
+    <script src="popup.js"></script>
+
+</body>
+</html>
