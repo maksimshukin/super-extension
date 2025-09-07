@@ -1,19 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
-    try {
+    // Функция для инициализации popup
+    async function initPopup() {
+        try {
         // --- НАСТРОЙКА ---
-        // Используем ключи из файла config.js
-        if (!self.SUPABASE_CONFIG) {
-            throw new Error('SUPABASE_CONFIG is not defined. Ensure popup/config.js is loaded before popup.js');
+        // Используем ключи из файла supabase.js
+        if (!window.SUPABASE_CONFIG) {
+            throw new Error('SUPABASE_CONFIG is not defined. Ensure supabase.js is loaded before popup.js');
         }
-        const SUPABASE_URL = self.SUPABASE_CONFIG.URL;
-        const SUPABASE_ANON_KEY = self.SUPABASE_CONFIG.ANON_KEY;
+        const SUPABASE_URL = window.SUPABASE_CONFIG.url;
+        const SUPABASE_ANON_KEY = window.SUPABASE_CONFIG.anonKey;
+        
+        console.log('[POPUP] Supabase config:', { url: SUPABASE_URL, keyLength: SUPABASE_ANON_KEY.length });
         
         // Проверка, загрузилась ли библиотека Supabase
-        if (typeof supabase === 'undefined') {
+        if (typeof window.supabase === 'undefined') {
             throw new Error("Критическая ошибка: Библиотека Supabase (supabase.js) не загружена. Проверьте путь к файлу в popup.html.");
         }
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('[POPUP] Supabase client created.');
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('[POPUP] Supabase client created:', supabaseClient);
+        
+        // Тестируем подключение к Supabase
+        try {
+            const { data, error } = await supabaseClient.auth.getSession();
+            console.log('[POPUP] Supabase connection test:', { data, error });
+        } catch (err) {
+            console.error('[POPUP] Supabase connection error:', err);
+        }
 
         // --- ФУНКЦИЯ ДЛЯ НАДЕЖНОГО ПОЛУЧЕНИЯ ЭЛЕМЕНТОВ ---
         const getEl = (id) => {
@@ -69,19 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // --- ЛОГИКА ПОКАЗА/СКРЫТИЯ ПАРОЛЯ ---
-        const eyeIconVisible = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'%3E%3C/path%3E%3Ccircle cx='12' cy='12' r='3'%3E%3C/circle%3E%3C/svg%3E")`;
-        const eyeIconHidden = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07l-2.22-2.22'%3E%3C/path%3E%3Cline x1='1' y1='1' x2='23' y2='23'%3E%3C/line%3E%3C/svg%3E")`;
-
         document.querySelectorAll('.toggle-password').forEach(toggle => {
-            toggle.style.backgroundImage = eyeIconHidden;
             toggle.addEventListener('click', () => {
                 const targetInput = getEl(toggle.dataset.target);
                 if (targetInput.type === 'password') {
                     targetInput.type = 'text';
-                    toggle.style.backgroundImage = eyeIconVisible;
+                    toggle.classList.add('showing');
                 } else {
                     targetInput.type = 'password';
-                    toggle.style.backgroundImage = eyeIconHidden;
+                    toggle.classList.remove('showing');
                 }
             });
         });
@@ -97,11 +106,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             strengthBar.className = 'strength-bar';
             if (password.length > 0) {
-                if (score <= 2) { strengthBar.classList.add('weak'); strengthBar.style.width = '25%'; }
-                else if (score === 3) { strengthBar.classList.add('medium'); strengthBar.style.width = '60%'; }
-                else if (score >= 4) { strengthBar.classList.add('strong'); strengthBar.style.width = '100%'; }
-            } else {
-                strengthBar.style.width = '0%';
+                if (score <= 1) { strengthBar.classList.add('strength-weak'); }
+                else if (score === 2) { strengthBar.classList.add('strength-fair'); }
+                else if (score === 3) { strengthBar.classList.add('strength-good'); }
+                else if (score >= 4) { strengthBar.classList.add('strength-strong'); }
             }
             return score;
         };
@@ -113,9 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isRegisterNameValid = registerNameInput.value.length >= 2;
             const isRegisterEmailValid = validateEmail(registerEmailInput.value);
-            const isRegisterPasswordStrong = checkPasswordStrength(registerPasswordInput.value) >= 2;
+            const passwordStrength = checkPasswordStrength(registerPasswordInput.value);
+            const isRegisterPasswordStrong = passwordStrength >= 2;
             const areCheckboxesChecked = tosCheck.checked && privacyCheck.checked;
-            registerBtn.disabled = !(isRegisterNameValid && isRegisterEmailValid && isRegisterPasswordStrong && areCheckboxesChecked);
+            
+            const isRegisterFormValid = isRegisterNameValid && isRegisterEmailValid && isRegisterPasswordStrong && areCheckboxesChecked;
+            registerBtn.disabled = !isRegisterFormValid;
+            
+            console.log('[POPUP] Form validation:', {
+                name: { valid: isRegisterNameValid, length: registerNameInput.value.length },
+                email: { valid: isRegisterEmailValid, value: registerEmailInput.value },
+                password: { strength: passwordStrength, strong: isRegisterPasswordStrong },
+                checkboxes: { checked: areCheckboxesChecked, tos: tosCheck.checked, privacy: privacyCheck.checked },
+                formValid: isRegisterFormValid,
+                buttonDisabled: registerBtn.disabled
+            });
         }
         
         [loginEmailInput, loginPasswordInput, registerNameInput, registerEmailInput, registerPasswordInput, tosCheck, privacyCheck]
@@ -166,26 +186,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // --- ОБРАБОТЧИКИ КНОПОК ---
+        console.log('[POPUP] Setting up register button listener');
+        console.log('[POPUP] Register button element:', registerBtn);
+        
         registerBtn.addEventListener('click', async () => {
             console.log('[POPUP] Register button clicked');
-            hideError(registerErrorDiv);
-            const { data, error } = await supabaseClient.auth.signUp({
+            console.log('[POPUP] Register data:', {
                 email: registerEmailInput.value,
-                password: registerPasswordInput.value,
-                options: { data: { full_name: registerNameInput.value } }
+                name: registerNameInput.value,
+                passwordLength: registerPasswordInput.value.length
             });
+            
+            hideError(registerErrorDiv);
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: registerEmailInput.value,
+                    password: registerPasswordInput.value,
+                    options: { 
+                        data: { 
+                            full_name: registerNameInput.value 
+                        } 
+                    }
+                });
 
-            if (error) {
-                console.error('[POPUP] signUp error:', error);
-                showError(registerErrorDiv, 'Пользователь с таким email уже существует.');
-            } else if (data.user && data.user.identities && data.user.identities.length === 0) {
-                showError(registerErrorDiv, 'Пользователь с таким email уже существует.');
-            } else {
-                if (data.session === null) {
-                    alert('Регистрация успешна! Пожалуйста, проверьте вашу почту и нажмите на ссылку для подтверждения аккаунта.');
+                console.log('[POPUP] SignUp response:', { data, error });
+
+                if (error) {
+                    console.error('[POPUP] signUp error:', error);
+                    let errorMessage = 'Ошибка регистрации.';
+                    
+                    if (error.message.includes('already registered')) {
+                        errorMessage = 'Пользователь с таким email уже существует.';
+                    } else if (error.message.includes('Invalid email')) {
+                        errorMessage = 'Неверный формат email.';
+                    } else if (error.message.includes('Password')) {
+                        errorMessage = 'Пароль слишком слабый.';
+                    } else {
+                        errorMessage = `Ошибка: ${error.message}`;
+                    }
+                    
+                    showError(registerErrorDiv, errorMessage);
+                } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+                    console.log('[POPUP] User already exists (no identities)');
+                    showError(registerErrorDiv, 'Пользователь с таким email уже существует.');
                 } else {
-                    alert('Регистрация успешна! Теперь вы можете войти.');
+                    console.log('[POPUP] Registration successful');
+                    if (data.session === null) {
+                        alert('Регистрация успешна! Пожалуйста, проверьте вашу почту и нажмите на ссылку для подтверждения аккаунта.');
+                    } else {
+                        alert('Регистрация успешна! Теперь вы можете войти.');
+                    }
                 }
+            } catch (err) {
+                console.error('[POPUP] Unexpected error during registration:', err);
+                showError(registerErrorDiv, 'Произошла неожиданная ошибка. Попробуйте еще раз.');
             }
         });
 
@@ -237,9 +292,23 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Для поддержки напишите на support@example.com');
         });
 
-    } catch (error) {
-        console.error('[POPUP] UNHANDLED ERROR:', error);
-        document.body.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">${error.message}</div>`;
+        } catch (error) {
+            console.error('[POPUP] UNHANDLED ERROR:', error);
+            document.body.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">${error.message}</div>`;
+        }
     }
+
+    // Ждем загрузки Supabase и инициализируем popup
+    async function waitForSupabase() {
+        if (window.SUPABASE_CONFIG && window.supabase) {
+            await initPopup();
+        } else {
+            console.log('[POPUP] Ожидаем загрузки Supabase...');
+            setTimeout(waitForSupabase, 100);
+        }
+    }
+
+    // Запускаем ожидание Supabase
+    waitForSupabase();
 });
 

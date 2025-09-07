@@ -128,6 +128,65 @@
         #app-view .action-buttons { display: flex; flex-direction: column; gap: 12px; }
         .dbm-btn-secondary { background-color: #F3F4F6; color: var(--dbm-text-primary); }
         .dbm-btn-secondary:hover { background-color: #e5e7eb; }
+
+        /* --- Вкладки --- */
+        .tabs {
+            display: flex; margin-bottom: 24px; border-radius: var(--dbm-radius-inner);
+            background-color: var(--dbm-input-bg); padding: 4px;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 16px; border: none; background: none;
+            border-radius: 8px; cursor: pointer; font-weight: 500;
+            transition: var(--dbm-transition); color: var(--dbm-text-secondary);
+        }
+        .tab-btn.active {
+            background-color: white; color: var(--dbm-text-primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- Поле пароля с кнопкой показа --- */
+        .password-wrapper {
+            position: relative; display: flex; align-items: center;
+        }
+        .password-wrapper input {
+            padding-right: 45px; /* Место для кнопки */
+        }
+        .toggle-password {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; padding: 4px;
+            color: var(--dbm-text-secondary); font-size: 16px;
+        }
+        .toggle-password:hover { color: var(--dbm-text-primary); }
+        .toggle-password::before { content: "👁️"; }
+        .toggle-password.showing::before { content: "🙈"; }
+
+        /* --- Индикатор силы пароля --- */
+        .strength-meter {
+            height: 4px; background-color: #e5e7eb; border-radius: 2px;
+            margin-top: 8px; overflow: hidden;
+        }
+        .strength-bar {
+            height: 100%; transition: var(--dbm-transition); border-radius: 2px;
+        }
+        .strength-weak { background-color: #ef4444; width: 25%; }
+        .strength-fair { background-color: #f59e0b; width: 50%; }
+        .strength-good { background-color: #10b981; width: 75%; }
+        .strength-strong { background-color: #059669; width: 100%; }
+
+        /* --- Чекбоксы --- */
+        .checkbox-group {
+            display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin: 0; flex-shrink: 0; margin-top: 2px;
+        }
+        .checkbox-group label {
+            font-size: 14px; line-height: 1.4; cursor: pointer;
+        }
+        .checkbox-group a {
+            color: var(--dbm-primary-color); text-decoration: none;
+        }
+        .checkbox-group a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -211,6 +270,7 @@
     </div>
 
     <!-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ДОБАВЛЯЕМ ПОДКЛЮЧЕНИЕ СКРИПТОВ -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="../supabase.js"></script>
     <script src="popup-config.js"></script>
     <script src="popup.js"></script>
