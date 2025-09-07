@@ -222,6 +222,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // ПЕРВОНАЧАЛЬНЫЙ ЗАПУСК
         console.log('[POPUP] Initial checkUserStatus call');
         checkUserStatus();
+        
+        // Добавляем кнопки для тестирования
+        const manageBtn = getEl('manage-btn');
+        const supportBtn = getEl('support-btn');
+        
+        manageBtn.addEventListener('click', () => {
+            console.log('[POPUP] Manage subscription clicked');
+            alert('Функция управления подпиской будет добавлена позже');
+        });
+        
+        supportBtn.addEventListener('click', () => {
+            console.log('[POPUP] Support clicked');
+            alert('Для поддержки напишите на support@example.com');
+        });
 
     } catch (error) {
         console.error('[POPUP] UNHANDLED ERROR:', error);

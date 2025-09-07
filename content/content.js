@@ -35,33 +35,76 @@ function waitForElement(selector) {
  */
 async function main() {
     console.log('SHIFT Extension: Content script запущен.');
-
-    // 1. Ждем, пока Tilda полностью отрисует свою библиотеку блоков.
-    const tildaLibraryContainer = await waitForElement('.tp-library__body');
-    const rightSideContainer = await waitForElement('.tp-library-rightside');
-    console.log('SHIFT: Библиотека Tilda найдена. Начинаем интеграцию.');
-
-    // 2. Слушаем изменения в хранилище (когда пользователь входит/выходит).
-    // Это позволяет панели обновляться в реальном времени без перезагрузки страницы.
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === 'local' && (changes.userStatus || changes.allSolutions)) {
-            console.log('SHIFT: Данные пользователя изменились. Перерисовываем панель...');
-            // Запрашиваем свежие данные и перерисовываем панель.
-            chrome.storage.local.get(['userStatus', 'allSolutions'], (storage) => {
-                renderShiftPanel(tildaLibraryContainer, rightSideContainer, storage.userStatus, storage.allSolutions);
-            });
+    
+    try {
+        // 1. Ждем, пока Tilda полностью отрисует свою библиотеку блоков.
+        console.log('[CONTENT] Ожидание элементов Tilda...');
+        const tildaLibraryContainer = await waitForElement('.tp-library__body');
+        const rightSideContainer = await waitForElement('.tp-library-rightside');
+        console.log('[CONTENT] Библиотека Tilda найдена. Начинаем интеграцию.');
+        
+        if (!tildaLibraryContainer || !rightSideContainer) {
+            throw new Error('Не удалось найти контейнеры библиотеки Tilda');
         }
-    });
 
-    // 3. Первоначальная загрузка данных при открытии страницы Tilda.
-    chrome.storage.local.get(['userStatus', 'allSolutions'], (storage) => {
-        if (storage.userStatus && storage.allSolutions) {
-            console.log('SHIFT: Найдены данные пользователя. Рисуем панель.', storage);
-            renderShiftPanel(tildaLibraryContainer, rightSideContainer, storage.userStatus, storage.allSolutions);
-        } else {
-            console.log('SHIFT: Данные пользователя не найдены. Панель не будет отрисована до входа.');
-        }
-    });
+        // 2. Слушаем изменения в хранилище (когда пользователь входит/выходит).
+        // Это позволяет панели обновляться в реальном времени без перезагрузки страницы.
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && (changes.userStatus || changes.allSolutions)) {
+                console.log('[CONTENT] Данные пользователя изменились. Перерисовываем панель...', changes);
+                // Запрашиваем свежие данные и перерисовываем панель.
+                chrome.storage.local.get(['userStatus', 'allSolutions'], (storage) => {
+                    try {
+                        renderShiftPanel(tildaLibraryContainer, rightSideContainer, storage.userStatus, storage.allSolutions);
+                    } catch (error) {
+                        console.error('[CONTENT] Ошибка при перерисовке панели:', error);
+                    }
+                });
+            }
+        });
+
+        // 3. Первоначальная загрузка данных при открытии страницы Tilda.
+        chrome.storage.local.get(['userStatus', 'allSolutions', 'userProfile'], (storage) => {
+            try {
+                console.log('[CONTENT] Загружены данные из storage:', {
+                    userStatus: storage.userStatus,
+                    allSolutionsCount: storage.allSolutions?.length,
+                    userProfile: !!storage.userProfile,
+                    allKeys: Object.keys(storage)
+                });
+                
+                if (storage.userStatus && storage.allSolutions) {
+                    console.log('[CONTENT] Найдены данные пользователя. Рисуем панель.', storage);
+                    renderShiftPanel(tildaLibraryContainer, rightSideContainer, storage.userStatus, storage.allSolutions);
+                } else {
+                    console.log('[CONTENT] Данные пользователя не найдены. Панель не будет отрисована до входа.');
+                    console.log('[CONTENT] Попробуем запросить данные у background...');
+                    
+                    // Запрашиваем обновление данных у background
+                    chrome.runtime.sendMessage({ type: 'REQUEST_USER_DATA' }, (response) => {
+                        console.log('[CONTENT] Ответ от background:', response);
+                        if (response && response.success) {
+                            // Ждем немного и проверяем данные снова
+                            setTimeout(() => {
+                                chrome.storage.local.get(['userStatus', 'allSolutions'], (updatedStorage) => {
+                                    console.log('[CONTENT] Обновленные данные после запроса:', updatedStorage);
+                                    if (updatedStorage.userStatus && updatedStorage.allSolutions) {
+                                        console.log('[CONTENT] Данные получены! Рисуем панель.');
+                                        renderShiftPanel(tildaLibraryContainer, rightSideContainer, updatedStorage.userStatus, updatedStorage.allSolutions);
+                                    }
+                                });
+                            }, 1000);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('[CONTENT] Ошибка при первоначальной загрузке:', error);
+            }
+        });
+        
+    } catch (error) {
+        console.error('[CONTENT] КРИТИЧЕСКАЯ ОШИБКА в main():', error);
+    }
 }
 
 /**
@@ -72,10 +115,15 @@ async function main() {
  * @param {Array} allSolutions - Массив всех решений из базы данных Supabase.
  */
 function renderShiftPanel(libraryContainer, rightSideContainer, userStatus, allSolutions) {
+    console.log('[CONTENT] renderShiftPanel вызвана с параметрами:', { userStatus, allSolutions: allSolutions?.length });
+    
     // Если данных нет, ничего не делаем.
     if (!userStatus || !allSolutions) {
+        console.log('[CONTENT] renderShiftPanel: недостаточно данных для отрисовки');
         return;
     }
+    
+    try {
 
     // Удаляем старые версии панели, если они есть, чтобы избежать дублирования.
     const oldCategory = document.getElementById('shift-category-container');
@@ -112,6 +160,12 @@ function renderShiftPanel(libraryContainer, rightSideContainer, userStatus, allS
     const blocksContainer = rightSideContainer.querySelector('#tplslist-shift-mods .tp-library__tpls-list-body__container');
 
     // --- Генерация и вставка карточек решений ---
+    // Проверяем, что конфиг загружен
+    if (typeof shiftSolutionsConfig === 'undefined') {
+        console.error('SHIFT: shiftSolutionsConfig не найден. Убедитесь, что content/config.js загружен перед content.js');
+        return;
+    }
+    
     shiftSolutionsConfig.forEach(configBlock => {
         const solutionFromDB = allSolutions.find(s => s.solution_code === configBlock.solutionCode);
         if (!solutionFromDB) {
@@ -145,16 +199,29 @@ function renderShiftPanel(libraryContainer, rightSideContainer, userStatus, allS
         blocksContainer.insertAdjacentHTML('beforeend', blockCardHTML);
     });
 
-    // "Оживляем" все элементы
-    addPanelListeners();
+        // "Оживляем" все элементы
+        addPanelListeners();
+        console.log('[CONTENT] renderShiftPanel завершена успешно');
+        
+    } catch (error) {
+        console.error('[CONTENT] Ошибка в renderShiftPanel:', error);
+    }
 }
 
 /**
  * Добавляет обработчики событий для новой категории и карточек.
  */
 function addPanelListeners() {
-    const categoryButton = document.getElementById('shift-category-container');
-    const blocksPanel = document.getElementById('tplslist-shift-mods');
+    console.log('[CONTENT] addPanelListeners: добавление обработчиков событий');
+    
+    try {
+        const categoryButton = document.getElementById('shift-category-container');
+        const blocksPanel = document.getElementById('tplslist-shift-mods');
+        
+        if (!categoryButton || !blocksPanel) {
+            console.error('[CONTENT] addPanelListeners: не найдены элементы для добавления обработчиков');
+            return;
+        }
 
     // Клик по категории "SHIFT Модификации"
     if (categoryButton) {
@@ -203,12 +270,17 @@ function addPanelListeners() {
                     window.tp__library__hide();
                 }
             } else {
-                console.error('SHIFT: Функция Tilda `tp__addRecord` не найдена.');
+                console.error('[CONTENT] Функция Tilda `tp__addRecord` не найдена.');
             }
         });
     });
+    
+    } catch (error) {
+        console.error('[CONTENT] Ошибка в addPanelListeners:', error);
+    }
 }
 
 // Запускаем весь процесс
 main();
 
+  
