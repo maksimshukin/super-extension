@@ -153,9 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         async function checkUserStatus() {
-            console.log('[POPUP] Checking session...');
-            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-            if (sessionError) console.error('[POPUP] getSession error:', sessionError);
+            console.log('[POPUP] Проверка статуса пользователя...');
+            try {
+                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                console.log('[POPUP] Сессия:', session);
+                if (sessionError) {
+                    console.error('[POPUP] Ошибка получения сессии:', sessionError);
+                    return;
+                }
             if (session) {
                 console.log('[POPUP] Session found. Rendering app view');
                 authContainer.classList.add('hidden');
@@ -182,6 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 authContainer.classList.remove('hidden');
                 appView.classList.add('hidden');
                 validateForms();
+            }
+            } catch (error) {
+                console.error('[POPUP] Ошибка в checkUserStatus:', error);
+                authContainer.classList.remove('hidden');
+                appView.classList.add('hidden');
             }
         }
 
@@ -345,12 +355,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabButtons.length > 0) {
                 tabButtons.forEach(button => {
                     button.addEventListener('click', () => {
+                        // Убираем active со всех кнопок
                         tabButtons.forEach(btn => btn.classList.remove('active'));
+                        // Добавляем active на нажатую кнопку
                         button.classList.add('active');
                         
                         const targetTabId = button.dataset.tab;
                         if (loginForm) loginForm.classList.toggle('hidden', targetTabId !== 'login-form');
                         if (registerForm) registerForm.classList.toggle('hidden', targetTabId !== 'register-form');
+                        
+                        console.log('[POPUP] Переключена вкладка:', targetTabId);
                     });
                 });
                 console.log('[POPUP] Обработчики вкладок установлены');
@@ -364,6 +378,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3>⚠️ Ошибка подключения</h3>
                         <p>Не удалось подключиться к серверу аутентификации.</p>
                         <p>Попробуйте перезагрузить расширение.</p>
+                        <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
+                            <strong>Диагностика:</strong><br>
+                            SUPABASE_CONFIG: ${window.SUPABASE_CONFIG ? '✅' : '❌'}<br>
+                            window.supabase: ${window.supabase ? '✅' : '❌'}<br>
+                            Попыток загрузки: ${supabaseWaitAttempts}
+                        </div>
                         <button onclick="window.close()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
                             Закрыть
                         </button>

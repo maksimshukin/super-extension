@@ -289,7 +289,7 @@ async function renderShiftPanel() {
     window.shiftSolutionsConfig.forEach(config => {
         // РЕШАЕТ ПРОБЛЕМУ №8 и №9: Используем структуру Tilda для карточки и подтягиваем данные (cod, title)
         const cardHTML = `
-            <div class="tp-library__tpl-body" data-solution-code="${config.solutionCode}">
+            <div class="tp-library__tpl-body" data-solution-code="${config.solutionCode}" data-tpl-id="131">
                 <div class="tp-library__tpl-wrapper">
                     <div class="tp-library__tpl-secwrapper">
                         <div class="tp-library__tpl-thirdwrapper">
@@ -351,18 +351,18 @@ function addEventListeners() {
             console.log(`[SHIFT] Добавляем блок для мода "${config.title}"`);
 
             try {
-                // 1. Скрываем библиотеку.
-                window.tp__library__hide();
+            // 1. Скрываем библиотеку.
+            window.tpgallery_close();
                 console.log('[SHIFT] Библиотека скрыта');
 
                 // 2. Добавляем пустой блок T123 и получаем его ID от Tilda.
-                const newRecId = window.tp__addRecord('123', window.afterid || '', true);
+                const newRecId = window.tpanel_addblock('123', window.afterid || '', true);
                 const fullRecId = `rec${newRecId}`; // РЕШЕНА ПРОБЛЕМА №6
                 
                 console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
 
                 // 3. Открываем панель настроек "Контент".
-                window.panel__editrecord(fullRecId, 'content');
+                window.pa_editrecord(fullRecId, 'content');
                 console.log('[SHIFT] Панель настроек открыта');
 
                 // 4. Ждем появления поля для ввода.
@@ -375,9 +375,28 @@ function addEventListeners() {
                 }
 
                 // 5. Вставляем код и имитируем ввод.
+                console.log('[SHIFT] Вставляем HTML-код:', config.htmlContent.substring(0, 100) + '...');
+                
+                // Способ 1: Прямая установка значения
                 htmlTextarea.value = config.htmlContent;
                 htmlTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+                htmlTextarea.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // Способ 2: Если не сработало, используем focus и ввод
+                htmlTextarea.focus();
+                htmlTextarea.select();
+                document.execCommand('insertText', false, config.htmlContent);
+                
+                // Способ 3: Триггерим все возможные события
+                ['input', 'change', 'keyup', 'paste'].forEach(eventType => {
+                    htmlTextarea.dispatchEvent(new Event(eventType, { bubbles: true }));
+                });
+                
                 console.log('[SHIFT] HTML-код вставлен в настройки блока');
+                console.log('[SHIFT] Текущее значение textarea:', htmlTextarea.value.substring(0, 100) + '...');
+                
+                // Дополнительная задержка для обработки
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 // 6. ГЛАВНЫЙ ШАГ: Находим и нажимаем "Сохранить и закрыть".
                 console.log('[SHIFT] Ожидаем появления кнопки сохранения...');
