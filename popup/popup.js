@@ -299,12 +299,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Ждем загрузки Supabase и инициализируем popup
+    let supabaseWaitAttempts = 0;
+    const maxSupabaseWaitAttempts = 50; // 5 секунд максимум
+    
     async function waitForSupabase() {
+        supabaseWaitAttempts++;
+        
+        console.log(`[POPUP] Попытка ${supabaseWaitAttempts}/${maxSupabaseWaitAttempts} загрузки Supabase...`);
+        console.log('[POPUP] SUPABASE_CONFIG:', !!window.SUPABASE_CONFIG);
+        console.log('[POPUP] window.supabase:', !!window.supabase);
+        
         if (window.SUPABASE_CONFIG && window.supabase) {
+            console.log('[POPUP] Supabase загружен, инициализируем popup...');
             await initPopup();
+        } else if (supabaseWaitAttempts >= maxSupabaseWaitAttempts) {
+            console.warn('[POPUP] Таймаут ожидания Supabase, инициализируем popup без Supabase...');
+            // Инициализируем popup даже без Supabase для базовой функциональности
+            await initPopupWithoutSupabase();
         } else {
-            console.log('[POPUP] Ожидаем загрузки Supabase...');
             setTimeout(waitForSupabase, 100);
+        }
+    }
+
+    // Функция инициализации popup без Supabase (для базовой функциональности)
+    async function initPopupWithoutSupabase() {
+        try {
+            console.log('[POPUP] Инициализация popup без Supabase...');
+            
+            // Получаем элементы
+            const versionDisplay = document.getElementById('version-display');
+            const closeBtn = document.getElementById('close-btn');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            
+            if (versionDisplay) {
+                versionDisplay.textContent = 'v' + chrome.runtime.getManifest().version;
+            }
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => window.close());
+            }
+            
+            // Логика вкладок
+            if (tabButtons.length > 0) {
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        const targetTabId = button.dataset.tab;
+                        if (loginForm) loginForm.classList.toggle('hidden', targetTabId !== 'login-form');
+                        if (registerForm) registerForm.classList.toggle('hidden', targetTabId !== 'register-form');
+                    });
+                });
+                console.log('[POPUP] Обработчики вкладок установлены');
+            }
+            
+            // Показываем сообщение об ошибке Supabase
+            const authContainer = document.getElementById('auth-container');
+            if (authContainer) {
+                authContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #666;">
+                        <h3>⚠️ Ошибка подключения</h3>
+                        <p>Не удалось подключиться к серверу аутентификации.</p>
+                        <p>Попробуйте перезагрузить расширение.</p>
+                        <button onclick="window.close()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Закрыть
+                        </button>
+                    </div>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('[POPUP] Ошибка инициализации без Supabase:', error);
         }
     }
 

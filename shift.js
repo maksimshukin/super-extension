@@ -532,13 +532,22 @@ console.log('[SHIFT] Функции отладки доступны в window.sh
  */
 async function initShiftExtension() {
     console.log('[SHIFT] Инициализация SHIFT Extension...');
+    console.log('[SHIFT] Текущий URL:', window.location.href);
+    console.log('[SHIFT] Document ready state:', document.readyState);
     
     try {
         // Проверяем, что мы на странице Tilda
-        if (!window.location.href.includes('tilda.cc')) {
+        const isTildaPage = window.location.href.includes('tilda.cc') || 
+                           window.location.href.includes('tilda.ws') || 
+                           window.location.href.includes('tilda.ru');
+        
+        if (!isTildaPage) {
             console.log('[SHIFT] Не на странице Tilda, пропускаем инициализацию');
+            console.log('[SHIFT] Текущий URL:', window.location.href);
             return;
         }
+        
+        console.log('[SHIFT] На странице Tilda, продолжаем инициализацию');
         
         // Ждем загрузки DOM
         if (document.readyState === 'loading') {
@@ -570,4 +579,6 @@ async function initShiftExtension() {
 }
 
 // Запускаем инициализацию
+console.log('[SHIFT] Запускаем инициализацию SHIFT Extension...');
 initShiftExtension();
+console.log('[SHIFT] Файл shift.js загружен полностью');
