@@ -1,7 +1,25 @@
-// shift.js - ПОЛНАЯ ЗАМЕНА ФАЙЛА
-// Решает все проблемы: быстрое создание блоков, правильное сохранение, интеграция с Tilda
+// Вставить в начало файла shift.js
 
-// Конфигурация решений SHIFT
+/**
+ * Вспомогательная функция для ожидания доступности глобальной функции.
+ * @param {string} functionName - Имя функции в window.
+ * @returns {Promise<Function>}
+ */
+function waitForFunction(functionName) {
+    return new Promise(resolve => {
+        if (window[functionName] && typeof window[functionName] === 'function') {
+            return resolve(window[functionName]);
+        }
+        const interval = setInterval(() => {
+            if (window[functionName] && typeof window[functionName] === 'function') {
+                clearInterval(interval);
+                resolve(window[functionName]);
+            }
+        }, 100); // Проверяем каждые 100мс
+    });
+}  
+
+
 window.shiftSolutionsConfig = [
     {
         solutionCode: 'super-slider',
@@ -350,69 +368,66 @@ function addEventListeners() {
 
             console.log(`[SHIFT] Добавляем блок для мода "${config.title}"`);
 
-            try {
-            // 1. Скрываем библиотеку.
-            window.tpgallery_close();
-                console.log('[SHIFT] Библиотека скрыта');
+ // Заменить существующий блок try...catch в addEventListeners
 
-                // 2. Добавляем пустой блок T123 и получаем его ID от Tilda.
-                const newRecId = window.tpanel_addblock('123', window.afterid || '', true);
-                const fullRecId = `rec${newRecId}`; // РЕШЕНА ПРОБЛЕМА №6
-                
-                console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
+try {
+    // 1. Скрываем библиотеку, симулируя клик по кнопке закрытия.
+    const closeButton = document.querySelector('.tp-library__header-close-wrapper .tp-library__header-close');
+    if (closeButton) {
+        closeButton.click();
+    } else {
+        console.error('[SHIFT] Не удалось найти кнопку закрытия библиотеки.');
+        // Попробуем вызвать функцию напрямую как запасной вариант
+        const tildaHideLibrary = window.tp__library__hide || window.tp__library__close || window.tpgallery_close;
+        if (typeof tildaHideLibrary === 'function') {
+            tildaHideLibrary();
+        } else {
+            return; // Прерываем выполнение, если ничего не сработало
+        }
+    }
+    console.log('[SHIFT] Библиотека скрыта');
 
-                // 3. Открываем панель настроек "Контент".
-                window.pa_editrecord(fullRecId, 'content');
-                console.log('[SHIFT] Панель настроек открыта');
+    // 2. Ждем, пока API Tilda будет готово
+    await waitForFunction('tp__addRecord');
+    await waitForFunction('panel__editrecord');
+    console.log('[SHIFT] Tilda API готово для добавления блока.');
 
-                // 4. Ждем появления поля для ввода.
-                console.log('[SHIFT] Ожидаем появления поля для HTML-кода...');
-                const htmlTextarea = await waitForElement('#ts-control-html-code');
-                
-                if (!htmlTextarea) {
-                    console.error('[SHIFT] Поле для HTML-кода не найдено!');
-                    return;
-                }
+    // 3. Добавляем пустой блок T123 и получаем его ID от Tilda.
+    const newRecId = window.tp__addRecord('123', window.afterid || '', true);
+    const fullRecId = `rec${newRecId}`;
+    
+    console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
 
-                // 5. Вставляем код и имитируем ввод.
-                console.log('[SHIFT] Вставляем HTML-код:', config.htmlContent.substring(0, 100) + '...');
-                
-                // Способ 1: Прямая установка значения
-                htmlTextarea.value = config.htmlContent;
-                htmlTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-                htmlTextarea.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                // Способ 2: Если не сработало, используем focus и ввод
-                htmlTextarea.focus();
-                htmlTextarea.select();
-                document.execCommand('insertText', false, config.htmlContent);
-                
-                // Способ 3: Триггерим все возможные события
-                ['input', 'change', 'keyup', 'paste'].forEach(eventType => {
-                    htmlTextarea.dispatchEvent(new Event(eventType, { bubbles: true }));
-                });
-                
-                console.log('[SHIFT] HTML-код вставлен в настройки блока');
-                console.log('[SHIFT] Текущее значение textarea:', htmlTextarea.value.substring(0, 100) + '...');
-                
-                // Дополнительная задержка для обработки
-                await new Promise(resolve => setTimeout(resolve, 1000));
+    // 4. Открываем панель настроек "Контент".
+    window.panel__editrecord(fullRecId, 'content');
+    console.log('[SHIFT] Панель настроек открыта');
 
-                // 6. ГЛАВНЫЙ ШАГ: Находим и нажимаем "Сохранить и закрыть".
-                console.log('[SHIFT] Ожидаем появления кнопки сохранения...');
-                const saveButton = await waitForElement('.ts-btn-pro-close');
-                
-                if (saveButton) {
-                    saveButton.click();
-                    console.log(`[SHIFT] Мод "${config.title}" успешно добавлен и сохранен!`);
-                } else {
-                    console.error('[SHIFT] Кнопка "Сохранить и закрыть" не найдена!');
-                }
-                // Весь процесс (ПРОБЛЕМА №7) завершен. Блок не пропадет (ПРОБЛЕМА №2).
-                
-            } catch (error) {
-                console.error('[SHIFT] Ошибка при добавлении блока:', error);
-            }
+    // 5. Ждем появления поля для ввода HTML (используем надежный селектор).
+    const htmlTextarea = await waitForElement('textarea[name="html"]');
+    
+    if (!htmlTextarea) {
+        console.error('[SHIFT] Поле для HTML-кода не найдено!');
+        return;
+    }
+
+    // 6. Вставляем код и имитируем ввод.
+    htmlTextarea.value = config.htmlContent;
+    htmlTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+    console.log('[SHIFT] HTML-код вставлен в настройки блока');
+
+    // 7. Находим и нажимаем "Сохранить и закрыть".
+    const saveButton = await waitForElement('.ts-btn-pro-close');
+    
+    if (saveButton) {
+        saveButton.click();
+        console.log(`[SHIFT] Мод "${config.title}" успешно добавлен и сохранен!`);
+    } else {
+        console.error('[SHIFT] Кнопка "Сохранить и закрыть" не найдена!');
+    }
+    
+} catch (error) {
+    console.error('[SHIFT] Ошибка при добавлении блока:', error);
+}
         });
     });
 
