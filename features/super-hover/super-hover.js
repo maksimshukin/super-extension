@@ -1,5 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const HoverArchitect = {
+if (!window.HoverArchitect) {
+    
+    window.HoverArchitect = {
         // --- STATE ---
         isSelectionMode: false,
         isReselectMode: false,
@@ -249,6 +250,30 @@ TRANSLATION_MAP: {
 
         // --- INITIALIZATION ---
         init() {
+
+            console.log('✅ Super Hover: Инициализация вызвана из main.js!');
+
+            if (document.getElementById('editor-panel')) {
+                // Если панель уже есть, просто покажем ее
+                this.els.panel.classList.remove('collapsed');
+                console.log('Super Hover: Панель уже существует, просто показываем ее.');
+                return;
+            }
+            console.log('Super Hover: Панель не найдена, создаем HTML...');
+            // Создаем HTML-контейнеры для панели
+            const container = document.createElement('div');
+            container.innerHTML = `
+                <aside id="editor-panel"></aside>
+                <button id="panel-toggle-collapsed" title="Развернуть панель"></button>
+                <div id="inspector-tooltip"></div>
+                <style id="dynamic-hover-styles"></style>
+                <template id="ai-assistant-modal-template">
+                    <div class="modal-content-wrapper">
+                        </div>
+                </template>
+            `;
+            document.body.appendChild(container);
+
             this.els.panel = document.getElementById('editor-panel');
             this.els.panelToggle = document.getElementById('panel-toggle-collapsed');
             this.els.inspector = document.getElementById('inspector-tooltip');
@@ -282,6 +307,7 @@ TRANSLATION_MAP: {
             this.loadUserPresets();
             this.initEventListeners();
             this.showManagerView();
+            console.log('✅ Super Hover: Панель успешно создана и настроена.');
         },
 
         initEventListeners() {
@@ -430,7 +456,17 @@ updateHeader(title, isEditor = false, subtitle = '') {
             }
         });
     }
-    document.getElementById('panel-toggle-main').addEventListener('click', () => this.els.panel.classList.toggle('collapsed'));
+    document.getElementById('panel-toggle-main').addEventListener('click', () => {
+        this.els.panel.classList.toggle('collapsed');
+    
+        // ✨ ЭТО НОВАЯ И ВАЖНАЯ ЧАСТЬ
+        // Если панель была свернута (закрыта)
+        if (this.els.panel.classList.contains('collapsed')) {
+            // Создаем и отправляем кастомное событие, чтобы main.js его услышал
+            const event = new CustomEvent('shift-panel-closed');
+            document.dispatchEvent(event);
+        }
+    });
 },
 
 
@@ -3166,5 +3202,4 @@ async generateAIEffect(prompt) {
 
         
     }
-    HoverArchitect.init();
-});
+};

@@ -273,13 +273,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (error) {
                     console.error('[POPUP] signInWithPassword error:', error);
-                if (error.message.includes('Email not confirmed')) {
-                    showError(loginErrorDiv, 'Ваш аккаунт не подтвержден. Пожалуйста, проверьте почту.');
-                } else {
-                    showError(loginErrorDiv, 'Неверный email или пароль.');
-                }
+                    console.error('[POPUP] Error details:', {
+                        message: error.message,
+                        email: loginEmailInput.value,
+                        passwordLength: loginPasswordInput.value.length
+                    });
+                    
+                    // Показываем более информативное сообщение об ошибке
+                    if (error.message.includes('Email not confirmed')) {
+                        showError(loginErrorDiv, 'Ваш аккаунт не подтвержден. Пожалуйста, проверьте почту.');
+                    } else if (error.message.includes('Неверные учетные данные')) {
+                        showError(loginErrorDiv, 'Неверный email или пароль. Для демо используйте: demo@example.com / demo123');
+                    } else {
+                        showError(loginErrorDiv, `Ошибка входа: ${error.message}`);
+                    }
                 } else {
                     chrome.runtime.sendMessage({ type: 'USER_LOGGED_IN' });
+                    chrome.storage.local.set({ userStatus: 'loggedIn' })
                     console.log('[POPUP] USER_LOGGED_IN sent to background');
                     checkUserStatus();
                 }
@@ -293,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('[POPUP] Logout button clicked');
             await supabaseClient.auth.signOut();
             chrome.runtime.sendMessage({ type: 'USER_LOGGED_OUT' });
+            chrome.storage.local.set({ userStatus: 'loggedOut' });
             console.log('[POPUP] USER_LOGGED_OUT sent to background');
             window.location.reload();
         });

@@ -3,14 +3,15 @@ const SHIFT_APP = {
     isPanelOpen: false,
     elements: {},
 
-    // Определите все доступные решения здесь
+    // Каталог всех ваших решений. Легко добавить новое!
     solutions: {
         'super-hover': {
             title: 'Super Hover',
             description: 'Создание продвинутых hover-эффектов',
             js: 'features/super-hover/super-hover.js',
             css: 'features/super-hover/super-hover.css',
-            initializer: 'HoverArchitect.init()' // Функция, которую нужно вызвать из скрипта
+            // Имя объекта, у которого нужно вызвать метод .init() после загрузки скрипта
+            initializer: 'HoverArchitect'
         },
         'super-grid': {
             title: 'Super Grid',
@@ -22,23 +23,68 @@ const SHIFT_APP = {
         },
         'tilda-mods': {
             title: 'Tilda Mods',
-            description: 'Запустить классические SHIFT моды для Tilda',
-            js: 'features/tilda-mods/tilda.js',
-            css: 'features/tilda-mods/tilda.css',
-            initializer: 'initShiftExtension()' // Ваш оригинальный инициализатор
+            description: 'Запустить классические моды для Tilda',
+            js: 'features/tilda-mods/tilda-mods.js',
+            css: 'features/tilda-mods/tilda-mods.css',
+            // У старого кода нет объекта, он выполняется сразу
+            initializer: null
         }
     },
 
     init() {
-        this.createFloatingIcon();
-        this.createSolutionsWindow();
-        this.addEventListeners();
+        console.log('[MAIN] SHIFT_APP инициализируется...');
+        
+        // Ждем, пока пользователь войдет в систему
+        chrome.storage.local.get('userStatus', (data) => {
+            console.log('[MAIN] Проверка статуса пользователя:', data);
+            if (data.userStatus === 'loggedIn') {
+                console.log('[MAIN] Пользователь вошел в систему, создаем UI...');
+                this.buildUI();
+            } else {
+                console.log('[MAIN] Пользователь не вошел в систему, UI не создается');
+            }
+        });
 
-        // Слушаем, когда панель функции (например, Super Hover) закрывается
+        // Слушаем сообщения от других частей расширения
+        chrome.runtime.onMessage.addListener((message) => {
+            console.log('[MAIN] Получено сообщение:', message);
+            if (message.type === 'USER_LOGGED_IN') {
+                console.log('[MAIN] Получен сигнал входа, создаем UI...');
+                this.buildUI();
+            }
+            if (message.type === 'USER_LOGGED_OUT') {
+                console.log('[MAIN] Получен сигнал выхода, уничтожаем UI...');
+                this.destroyUI();
+            }
+        });
+    },
+
+    buildUI() {
+        console.log('[MAIN] buildUI() вызвана');
+        if (this.elements.floatingIcon) {
+            console.log('[MAIN] UI уже создан, пропускаем');
+            return; // UI уже создан
+        }
+
+        console.log('[MAIN] Создаем плавающую иконку...');
+        this.createFloatingIcon();
+        console.log('[MAIN] Создаем окно решений...');
+        this.createSolutionsWindow();
+        console.log('[MAIN] Добавляем обработчики событий...');
+        this.addEventListeners();
+        console.log('[MAIN] UI успешно создан!');
+
+        // Слушаем, когда панель Super Hover (или другая) закроется
         document.addEventListener('shift-panel-closed', () => {
             this.isPanelOpen = false;
             this.elements.floatingIcon.classList.remove('shift-hidden');
         });
+    },
+
+    destroyUI() {
+        this.elements.floatingIcon?.remove();
+        this.elements.solutionsWindow?.remove();
+        this.elements = {};
     },
 
     createFloatingIcon() {
@@ -54,21 +100,20 @@ const SHIFT_APP = {
         this.elements.solutionsWindow.classList.add('shift-hidden');
 
         let cardsHTML = '';
-        // Создаем карточку для каждого решения
         for (const key in this.solutions) {
             const solution = this.solutions[key];
-            // Добавляем специальное условие для модов только для Tilda
+            
+            // Умное условие: показывать Tilda моды только на сайтах Tilda
             if (key === 'tilda-mods' && !window.location.hostname.includes('tilda.cc')) {
-                continue; // Не показывать карточку Tilda, если это не сайт Tilda
+                continue;
             }
+
             cardsHTML += `
                 <div class="card" data-solution-key="${key}">
                     <h4>${solution.title}</h4>
                     <p>${solution.description}</p>
-                </div>
-            `;
+                </div>`;
         }
-
         this.elements.solutionsWindow.innerHTML = cardsHTML;
         document.body.appendChild(this.elements.solutionsWindow);
     },
@@ -90,37 +135,58 @@ const SHIFT_APP = {
     },
 
     async launchSolution(key) {
+        console.log('[MAIN] launchSolution вызвана для:', key);
         const solution = this.solutions[key];
         if (!solution || !solution.js) {
+            console.log('[MAIN] Решение не найдено или в разработке:', key);
             alert(`${solution.title} находится в разработке!`);
             return;
         }
 
+        console.log('[MAIN] Запускаем решение:', solution.title);
         this.isPanelOpen = true;
         this.elements.floatingIcon.classList.add('shift-hidden');
 
-        // Динамически внедряем CSS
+
+        if (key === 'super-hover') {
+            // 2. Создаем и добавляем HTML для панели Super Hover
+            const panelContainer = document.createElement('div');
+            panelContainer.innerHTML = `
+                <div id="editor-panel" class="collapsed"></div>
+                <div id="panel-toggle-collapsed"></div>
+                <div id="inspector-tooltip"></div>
+                <style id="dynamic-hover-styles"></style>
+            `;
+            document.body.appendChild(panelContainer);
+        }
+
         if (solution.css) {
+            console.log('[MAIN] Загружаем CSS:', solution.css);
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.type = 'text/css';
             link.href = chrome.runtime.getURL(solution.css);
             document.head.appendChild(link);
         }
 
-        // Динамически внедряем и выполняем JS
+        console.log('[MAIN] Загружаем JS:', solution.js);
         const script = document.createElement('script');
         script.src = chrome.runtime.getURL(solution.js);
         script.onload = () => {
-            if (solution.initializer) {
-                // Выполняем конкретную функцию инициализации для этой функции
-                new Function(solution.initializer)();
+            console.log('[MAIN] Скрипт загружен, проверяем инициализатор:', solution.initializer);
+            if (solution.initializer && window[solution.initializer]) {
+                console.log('[MAIN] Вызываем инициализатор:', solution.initializer + '.init()');
+                // Вызываем метод .init() у нужного объекта, например, HoverArchitect.init()
+                window[solution.initializer].init();
+            } else {
+                console.log('[MAIN] Инициализатор не найден или не определен');
             }
-            script.remove(); // Очищаем тег скрипта
+            script.remove();
+        };
+        script.onerror = (error) => {
+            console.error('[MAIN] Ошибка загрузки скрипта:', error);
         };
         document.body.appendChild(script);
     }
 };
 
-// Запускаем приложение
 SHIFT_APP.init();
