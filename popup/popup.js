@@ -3,22 +3,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initPopup() {
         try {
         // --- НАСТРОЙКА ---
-        // Используем ключи из файла supabase.js
-        if (!window.SUPABASE_CONFIG) {
-            throw new Error('SUPABASE_CONFIG is not defined. Ensure supabase.js is loaded before popup.js');
+        // Используем ключи из файла config.js
+        if (!window.SHIFT_SUPABASE_CONFIG) {
+            throw new Error('SHIFT_SUPABASE_CONFIG is not defined. Ensure config.js is loaded before popup.js');
         }
-        const SUPABASE_URL = window.SUPABASE_CONFIG.url;
-        const SUPABASE_ANON_KEY = window.SUPABASE_CONFIG.anonKey;
+        const SUPABASE_URL = window.SHIFT_SUPABASE_CONFIG.url;
+        const SUPABASE_ANON_KEY = window.SHIFT_SUPABASE_CONFIG.anonKey;
         
         console.log('[POPUP] Supabase config:', { url: SUPABASE_URL, keyLength: SUPABASE_ANON_KEY.length });
         
-        // Проверка, загрузилась ли библиотека Supabase
-        if (typeof window.supabase === 'undefined') {
-            throw new Error("Критическая ошибка: Библиотека Supabase (supabase.js) не загружена. Проверьте путь к файлу в popup.html.");
+        // Проверка, загрузился ли локальный Supabase клиент
+        if (typeof window.supabaseClient === 'undefined' || window.supabaseClient === null) {
+            throw new Error("Критическая ошибка: Локальный Supabase клиент не загружен. Проверьте файл supabase.js.");
         }
         
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('[POPUP] Supabase client created:', supabaseClient);
+        const supabaseClient = window.supabaseClient;
+        console.log('[POPUP] Локальный Supabase client используется:', supabaseClient);
         
         // Тестируем подключение к Supabase
         try {
@@ -256,23 +256,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loginBtn.addEventListener('click', async () => {
             console.log('[POPUP] Login button clicked');
+            console.log('[POPUP] Email:', loginEmailInput.value);
+            console.log('[POPUP] Password length:', loginPasswordInput.value.length);
+            console.log('[POPUP] supabaseClient:', supabaseClient);
+            console.log('[POPUP] supabaseClient.auth:', supabaseClient?.auth);
+            
             hideError(loginErrorDiv);
-            const { error } = await supabaseClient.auth.signInWithPassword({
-                email: loginEmailInput.value,
-                password: loginPasswordInput.value,
-            });
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: loginEmailInput.value,
+                    password: loginPasswordInput.value,
+                });
 
-            if (error) {
-                console.error('[POPUP] signInWithPassword error:', error);
+                console.log('[POPUP] signInWithPassword response:', { data, error });
+
+                if (error) {
+                    console.error('[POPUP] signInWithPassword error:', error);
                 if (error.message.includes('Email not confirmed')) {
                     showError(loginErrorDiv, 'Ваш аккаунт не подтвержден. Пожалуйста, проверьте почту.');
                 } else {
                     showError(loginErrorDiv, 'Неверный email или пароль.');
                 }
-            } else {
-                chrome.runtime.sendMessage({ type: 'USER_LOGGED_IN' });
-                console.log('[POPUP] USER_LOGGED_IN sent to background');
-                checkUserStatus();
+                } else {
+                    chrome.runtime.sendMessage({ type: 'USER_LOGGED_IN' });
+                    console.log('[POPUP] USER_LOGGED_IN sent to background');
+                    checkUserStatus();
+                }
+            } catch (err) {
+                console.error('[POPUP] Unexpected error during login:', err);
+                showError(loginErrorDiv, 'Произошла неожиданная ошибка. Попробуйте еще раз.');
             }
         });
 
@@ -316,10 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
         supabaseWaitAttempts++;
         
         console.log(`[POPUP] Попытка ${supabaseWaitAttempts}/${maxSupabaseWaitAttempts} загрузки Supabase...`);
-        console.log('[POPUP] SUPABASE_CONFIG:', !!window.SUPABASE_CONFIG);
-        console.log('[POPUP] window.supabase:', !!window.supabase);
+        console.log('[POPUP] SHIFT_SUPABASE_CONFIG:', !!window.SHIFT_SUPABASE_CONFIG);
+        console.log('[POPUP] window.supabaseClient:', !!window.supabaseClient);
         
-        if (window.SUPABASE_CONFIG && window.supabase) {
+        if (window.SHIFT_SUPABASE_CONFIG && window.supabaseClient) {
             console.log('[POPUP] Supabase загружен, инициализируем popup...');
             await initPopup();
         } else if (supabaseWaitAttempts >= maxSupabaseWaitAttempts) {
@@ -380,8 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>Попробуйте перезагрузить расширение.</p>
                         <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
                             <strong>Диагностика:</strong><br>
-                            SUPABASE_CONFIG: ${window.SUPABASE_CONFIG ? '✅' : '❌'}<br>
-                            window.supabase: ${window.supabase ? '✅' : '❌'}<br>
+                            SHIFT_SUPABASE_CONFIG: ${window.SHIFT_SUPABASE_CONFIG ? '✅' : '❌'}<br>
+                            window.supabaseClient: ${window.supabaseClient ? '✅' : '❌'}<br>
                             Попыток загрузки: ${supabaseWaitAttempts}
                         </div>
                         <button onclick="window.close()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">

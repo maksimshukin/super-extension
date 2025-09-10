@@ -368,66 +368,61 @@ function addEventListeners() {
 
             console.log(`[SHIFT] Добавляем блок для мода "${config.title}"`);
 
- // Заменить существующий блок try...catch в addEventListeners
-
-try {
-    // 1. Скрываем библиотеку, симулируя клик по кнопке закрытия.
-    const closeButton = document.querySelector('.tp-library__header-close-wrapper .tp-library__header-close');
-    if (closeButton) {
-        closeButton.click();
-    } else {
-        console.error('[SHIFT] Не удалось найти кнопку закрытия библиотеки.');
-        // Попробуем вызвать функцию напрямую как запасной вариант
-        const tildaHideLibrary = window.tp__library__hide || window.tp__library__close || window.tpgallery_close;
-        if (typeof tildaHideLibrary === 'function') {
-            tildaHideLibrary();
-        } else {
-            return; // Прерываем выполнение, если ничего не сработало
-        }
-    }
-    console.log('[SHIFT] Библиотека скрыта');
-
-    // 2. Ждем, пока API Tilda будет готово
-    await waitForFunction('tp__addRecord');
-    await waitForFunction('panel__editrecord');
-    console.log('[SHIFT] Tilda API готово для добавления блока.');
-
-    // 3. Добавляем пустой блок T123 и получаем его ID от Tilda.
-    const newRecId = window.tp__addRecord('123', window.afterid || '', true);
-    const fullRecId = `rec${newRecId}`;
-    
-    console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
-
-    // 4. Открываем панель настроек "Контент".
-    window.panel__editrecord(fullRecId, 'content');
-    console.log('[SHIFT] Панель настроек открыта');
-
-    // 5. Ждем появления поля для ввода HTML (используем надежный селектор).
-    const htmlTextarea = await waitForElement('textarea[name="html"]');
-    
-    if (!htmlTextarea) {
-        console.error('[SHIFT] Поле для HTML-кода не найдено!');
-        return;
-    }
-
-    // 6. Вставляем код и имитируем ввод.
-    htmlTextarea.value = config.htmlContent;
-    htmlTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-    console.log('[SHIFT] HTML-код вставлен в настройки блока');
-
-    // 7. Находим и нажимаем "Сохранить и закрыть".
-    const saveButton = await waitForElement('.ts-btn-pro-close');
-    
-    if (saveButton) {
-        saveButton.click();
-        console.log(`[SHIFT] Мод "${config.title}" успешно добавлен и сохранен!`);
-    } else {
-        console.error('[SHIFT] Кнопка "Сохранить и закрыть" не найдена!');
-    }
-    
-} catch (error) {
-    console.error('[SHIFT] Ошибка при добавлении блока:', error);
-}
+            try {
+                // 1. Скрываем библиотеку самым надежным способом - симуляцией клика.
+                const closeButton = document.querySelector('.tp-library__header-close-wrapper .tp-library__header-close');
+                if (closeButton) {
+                    closeButton.click();
+                } else {
+                    console.error('[SHIFT] Кнопка закрытия библиотеки не найдена.');
+                    // Попытка вызова функции напрямую как запасной вариант
+                    const tildaHideLibrary = window.tp__library__hide || window.tp__library__close || window.tpgallery_close;
+                    if (typeof tildaHideLibrary === 'function') {
+                        tildaHideLibrary();
+                    } else {
+                        return; // Прерываем выполнение, если ничего не сработало
+                    }
+                }
+                console.log('[SHIFT] Библиотека скрыта');
+            
+                // 2. Ждем готовности API Tilda для сохранения данных.
+                await waitForFunction('tp__addRecord');
+                await waitForFunction('panel__editrecord_saveval');
+                await waitForFunction('tp__updateRecord');
+                console.log('[SHIFT] Tilda API готово.');
+            
+                // 3. Добавляем пустой блок и получаем его ID.
+                const newRecId = window.tp__addRecord('123', window.afterid || '', true);
+                const fullRecId = `rec${newRecId}`;
+                console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
+            
+                // 4. Получаем HTML-контент (динамически или статически).
+                const htmlContent = typeof config.getHtmlContent === 'function' 
+                    ? config.getHtmlContent() 
+                    : config.htmlContent;
+            
+                if (!htmlContent) {
+                    console.error('[SHIFT] HTML-контент для блока не определен!');
+                    return;
+                }
+                
+                // 5. ПОСЛЕДОВАТЕЛЬНО СОХРАНЯЕМ ДАННЫЕ НАПРЯМУЮ
+                console.log('[SHIFT] Сохраняем HTML контент...');
+                await window.panel__editrecord_saveval(fullRecId, 'html', htmlContent);
+                console.log('[SHIFT] HTML контент сохранен.');
+            
+                console.log('[SHIFT] Добавляем CSS класс "dbm-block"...');
+                await window.panel__editrecord_saveval(fullRecId, 'cssclassname', 'dbm-block');
+                console.log('[SHIFT] CSS класс "dbm-block" добавлен.');
+                
+                // 6. Обновляем блок на странице, чтобы все изменения отобразились.
+                await window.tp__updateRecord(fullRecId);
+                
+                console.log(`[SHIFT] Мод "${config.title}" успешно добавлен и сохранен!`);
+            
+            } catch (error) {
+                console.error('[SHIFT] Ошибка при добавлении блока:', error);
+            }
         });
     });
 

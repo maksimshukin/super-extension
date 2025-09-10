@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase</title>
+</head>
+<body>
+    <h1>Test Supabase Local Client</h1>
+    <button id="test-btn">Test Supabase</button>
+    <div id="result"></div>
+
+    <script src="supabase.js"></script>
+    <script>
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                console.log('Testing Supabase client...');
+                console.log('window.supabaseClient:', window.supabaseClient);
+                console.log('window.SHIFT_SUPABASE_CONFIG:', window.SHIFT_SUPABASE_CONFIG);
+                
+                if (!window.supabaseClient) {
+                    resultDiv.innerHTML = '<p style="color: red;">ERROR: supabaseClient not found</p>';
+                    return;
+                }
+                
+                // Test signInWithPassword
+                const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                    email: 'demo@example.com',
+                    password: 'demo123'
+                });
+                
+                console.log('Test result:', { data, error });
+                
+                if (error) {
+                    resultDiv.innerHTML = `<p style="color: red;">ERROR: ${error.message}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: green;">SUCCESS: User logged in as ${data.user.email}</p>`;
+                }
+                
+            } catch (err) {
+                console.error('Test error:', err);
+                resultDiv.innerHTML = `<p style="color: red;">EXCEPTION: ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

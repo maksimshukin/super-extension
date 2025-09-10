@@ -2,32 +2,14 @@
   "manifest_version": 3,
   "name": "SHIFT Tilda Mods",
   "version": "2.0.0",
-  "description": "Платформа для модификаций и улучшений Tilda.",
+  "description": "Платформа для модификаций и улучшений Tilda и других сайтов.",
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
   "host_permissions": [
-    "https://*.supabase.co/*",
-    "https://*.tilda.cc/*",
-    "https://*.tilda.ws/*",
-    "https://*.tilda.ru/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "*://tilda.cc/page/?pageid=*",
-        "*://tilda.ws/page/?pageid=*",
-        "*://tilda.ru/page/?pageid=*"
-      ],
-      "js": [
-        "shift.js"
-      ],
-      "css": [
-        "shift.css"
-      ]
-    }
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -35,22 +17,34 @@
       "48": "assets/icon128.png"
     }
   },
-  "options_page": "options/options.html",
-  "web_accessible_resources": [
+  "icons": {
+    "48": "assets/icon128.png"
+  },
+  "content_scripts": [
     {
-      "resources": [
-        "shift.js",
-        "shift.css"
-      ],
       "matches": [
-        "*://tilda.cc/*",
-        "*://tilda.ws/*",
-        "*://tilda.ru/*"
+        "<all_urls>"
+      ],
+      "js": [
+        "core/main.js"
+      ],
+      "css": [
+        "core/main.css"
       ]
     }
   ],
-  "icons": {
-    "48": "assets/icon128.png"
-  }
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "features/super-hover/super-hover.js",
+        "features/super-hover/super-hover.css",
+        "features/tilda-mods/tilda-mods.js",
+        "features/tilda-mods/tilda-mods.css",
+        "assets/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }
-
