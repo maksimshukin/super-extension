@@ -148,17 +148,6 @@ const SHIFT_APP = {
         this.elements.floatingIcon.classList.add('shift-hidden');
 
 
-        if (key === 'super-hover') {
-            // 2. Создаем и добавляем HTML для панели Super Hover
-            const panelContainer = document.createElement('div');
-            panelContainer.innerHTML = `
-                <div id="editor-panel" class="collapsed"></div>
-                <div id="panel-toggle-collapsed"></div>
-                <div id="inspector-tooltip"></div>
-                <style id="dynamic-hover-styles"></style>
-            `;
-            document.body.appendChild(panelContainer);
-        }
 
         if (solution.css) {
             console.log('[MAIN] Загружаем CSS:', solution.css);

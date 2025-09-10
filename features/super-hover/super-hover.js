@@ -273,7 +273,7 @@ TRANSLATION_MAP: {
                 </template>
             `;
             document.body.appendChild(container);
-
+            this.els.panel.classList.remove('collapsed');
             this.els.panel = document.getElementById('editor-panel');
             this.els.panelToggle = document.getElementById('panel-toggle-collapsed');
             this.els.inspector = document.getElementById('inspector-tooltip');
