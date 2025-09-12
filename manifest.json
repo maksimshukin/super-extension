@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SHIFT Tilda Mods",
+  "name": "SUPER Tilda Mods",
   "version": "2.0.0",
   "description": "Платформа для модификаций и улучшений Tilda и других сайтов.",
   "permissions": [
@@ -38,6 +38,8 @@
       "resources": [
         "features/super-hover/super-hover.js",
         "features/super-hover/super-hover.css",
+        "features/super-slider/super-slider.js",
+        "features/super-slider/super-slider.css",
         "features/tilda-mods/tilda-mods.js",
         "features/tilda-mods/tilda-mods.css",
         "assets/*"

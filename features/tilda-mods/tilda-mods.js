@@ -1,11 +1,11 @@
-// Вставить в начало файла shift.js
+// Вставить в начало файла super.js
 
 /**
  * Вспомогательная функция для ожидания доступности глобальной функции.
  * @param {string} functionName - Имя функции в window.
  * @returns {Promise<Function>}
  */
-function waitForFunction(functionName) {
+function dbmWaitForFunction(functionName) {
     return new Promise(resolve => {
         if (window[functionName] && typeof window[functionName] === 'function') {
             return resolve(window[functionName]);
@@ -20,7 +20,7 @@ function waitForFunction(functionName) {
 }  
 
 
-window.shiftSolutionsConfig = [
+window.dbmSuperSolutionsConfig = [
     {
         solutionCode: 'super-slider',
         cod: 'SHF001', // Номер блока
@@ -32,41 +32,41 @@ window.shiftSolutionsConfig = [
     <p>Здесь находятся настройки и инструменты для Супер Слайдера.</p>
     
     <style>
-        .shift-slider { position: relative; overflow: hidden; border-radius: 8px; margin: 20px 0; }
-        .shift-slider__container { display: flex; transition: transform 0.3s ease; }
-        .shift-slider__slide { min-width: 100%; padding: 40px; color: white; text-align: center; }
-        .shift-slider__controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
-        .shift-slider__btn { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; background: transparent; cursor: pointer; }
-        .shift-slider__btn.active { background: white; }
+        .super-slider { position: relative; overflow: hidden; border-radius: 8px; margin: 20px 0; }
+        .super-slider__container { display: flex; transition: transform 0.3s ease; }
+        .super-slider__slide { min-width: 100%; padding: 40px; color: white; text-align: center; }
+        .super-slider__controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+        .super-slider__btn { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; background: transparent; cursor: pointer; }
+        .super-slider__btn.active { background: white; }
     </style>
     
-    <div class="shift-slider">
-        <div class="shift-slider__container">
-            <div class="shift-slider__slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="super-slider">
+        <div class="super-slider__container">
+            <div class="super-slider__slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <h2>Слайд 1</h2>
                 <p>Первый слайд с красивым градиентом</p>
             </div>
-            <div class="shift-slider__slide" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="super-slider__slide" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <h2>Слайд 2</h2>
                 <p>Второй слайд с другим градиентом</p>
             </div>
-            <div class="shift-slider__slide" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="super-slider__slide" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                 <h2>Слайд 3</h2>
                 <p>Третий слайд с синим градиентом</p>
             </div>
         </div>
-        <div class="shift-slider__controls">
-            <button class="shift-slider__btn active" data-slide="0"></button>
-            <button class="shift-slider__btn" data-slide="1"></button>
-            <button class="shift-slider__btn" data-slide="2"></button>
+        <div class="super-slider__controls">
+            <button class="super-slider__btn active" data-slide="0"></button>
+            <button class="super-slider__btn" data-slide="1"></button>
+            <button class="super-slider__btn" data-slide="2"></button>
         </div>
     </div>
     
     <script>
         (function() {
             var currentSlide = 0;
-            var container = document.querySelector('.shift-slider__container');
-            var buttons = document.querySelectorAll('.shift-slider__btn');
+            var container = document.querySelector('.super-slider__container');
+            var buttons = document.querySelectorAll('.super-slider__btn');
             
             if (!container || !buttons.length) return;
             
@@ -102,20 +102,20 @@ window.shiftSolutionsConfig = [
     <p>Здесь находятся настройки и инструменты для Супер Грида.</p>
     
     <style>
-        .shift-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; padding: 20px; margin: 20px 0; }
-        .shift-grid__item { padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .super-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; padding: 20px; margin: 20px 0; }
+        .super-grid__item { padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; }
     </style>
     
-    <div class="shift-grid">
-        <div class="shift-grid__item" style="grid-column: span 4;">
+    <div class="super-grid">
+        <div class="super-grid__item" style="grid-column: span 4;">
             <h3>Колонка 1</h3>
             <p>Содержимое первой колонки</p>
         </div>
-        <div class="shift-grid__item" style="grid-column: span 4;">
+        <div class="super-grid__item" style="grid-column: span 4;">
             <h3>Колонка 2</h3>
             <p>Содержимое второй колонки</p>
         </div>
-        <div class="shift-grid__item" style="grid-column: span 4;">
+        <div class="super-grid__item" style="grid-column: span 4;">
             <h3>Колонка 3</h3>
             <p>Содержимое третьей колонки</p>
         </div>
@@ -134,40 +134,40 @@ window.shiftSolutionsConfig = [
     <p>Здесь находятся настройки и инструменты для Грид-стеков.</p>
     
     <style>
-        .shift-grid-stacks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 20px; margin: 20px 0; }
-        .shift-stack { background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s ease; }
-        .shift-stack:hover { transform: translateY(-5px); }
-        .shift-stack__header { color: white; padding: 20px; }
-        .shift-stack__content { padding: 20px; }
+        .super-grid-stacks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 20px; margin: 20px 0; }
+        .super-stack { background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s ease; }
+        .super-stack:hover { transform: translateY(-5px); }
+        .super-stack__header { color: white; padding: 20px; }
+        .super-stack__content { padding: 20px; }
     </style>
     
-    <div class="shift-grid-stacks">
-        <div class="shift-stack">
-            <div class="shift-stack__header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="super-grid-stacks">
+        <div class="super-stack">
+            <div class="super-stack__header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <h3 style="margin: 0; font-size: 18px;">Стек 1</h3>
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Описание первого стека</p>
             </div>
-            <div class="shift-stack__content">
+            <div class="super-stack__content">
                 <p>Содержимое первого стека с полезной информацией.</p>
                 <button style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Подробнее</button>
             </div>
         </div>
-        <div class="shift-stack">
-            <div class="shift-stack__header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="super-stack">
+            <div class="super-stack__header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <h3 style="margin: 0; font-size: 18px;">Стек 2</h3>
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Описание второго стека</p>
             </div>
-            <div class="shift-stack__content">
+            <div class="super-stack__content">
                 <p>Содержимое второго стека с другой информацией.</p>
                 <button style="background: #f093fb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Подробнее</button>
             </div>
         </div>
-        <div class="shift-stack">
-            <div class="shift-stack__header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <div class="super-stack">
+            <div class="super-stack__header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                 <h3 style="margin: 0; font-size: 18px;">Стек 3</h3>
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Описание третьего стека</p>
             </div>
-            <div class="shift-stack__content">
+            <div class="super-stack__content">
                 <p>Содержимое третьего стека с дополнительной информацией.</p>
                 <button style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px;">Подробнее</button>
             </div>
@@ -187,46 +187,46 @@ window.shiftSolutionsConfig = [
     <p>Здесь находятся настройки и инструменты для Кастомного HTML.</p>
     
     <style>
-        .shift-custom-html { padding: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin: 20px 0; }
-        .shift-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
-        .shift-feature { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); }
-        .shift-cta { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 15px 30px; border-radius: 25px; font-size: 16px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px); }
-        .shift-cta:hover { background: white; color: #667eea; transform: translateY(-2px); }
+        .super-custom-html { padding: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; margin: 20px 0; }
+        .super-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
+        .super-feature { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); }
+        .super-cta { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 15px 30px; border-radius: 25px; font-size: 16px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px); }
+        .super-cta:hover { background: white; color: #667eea; transform: translateY(-2px); }
     </style>
     
-    <div class="shift-custom-html">
-        <div class="shift-custom-content">
+    <div class="super-custom-html">
+        <div class="super-custom-content">
             <h2 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 300;">Кастомный HTML</h2>
-            <p style="margin: 0 0 30px 0; font-size: 18px; opacity: 0.9;">Этот блок создан с помощью SHIFT Extension</p>
+            <p style="margin: 0 0 30px 0; font-size: 18px; opacity: 0.9;">Этот блок создан с помощью SUPER Extension</p>
             
-            <div class="shift-features">
-                <div class="shift-feature">
+            <div class="super-features">
+                <div class="super-feature">
                     <div style="font-size: 24px; margin-bottom: 10px;">🚀</div>
                     <h4 style="margin: 0 0 10px 0;">Быстро</h4>
                     <p style="margin: 0; font-size: 14px; opacity: 0.8;">Мгновенное создание блоков</p>
                 </div>
-                <div class="shift-feature">
+                <div class="super-feature">
                     <div style="font-size: 24px; margin-bottom: 10px;">🎨</div>
                     <h4 style="margin: 0 0 10px 0;">Красиво</h4>
                     <p style="margin: 0; font-size: 14px; opacity: 0.8;">Современный дизайн</p>
                 </div>
-                <div class="shift-feature">
+                <div class="super-feature">
                     <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
                     <h4 style="margin: 0 0 10px 0;">Эффективно</h4>
                     <p style="margin: 0; font-size: 14px; opacity: 0.8;">Оптимизированный код</p>
                 </div>
             </div>
             
-            <button class="shift-cta">Начать работу</button>
+            <button class="super-cta">Начать работу</button>
         </div>
     </div>
     
     <script>
         (function() {
-            var ctaButton = document.querySelector('.shift-cta');
+            var ctaButton = document.querySelector('.super-cta');
             if (ctaButton) {
                 ctaButton.addEventListener('click', function() {
-                    alert('SHIFT Extension работает! 🎉');
+                    alert('SUPER Extension работает! 🎉');
                 });
             }
         })();
@@ -236,7 +236,7 @@ window.shiftSolutionsConfig = [
     }
 ];
 
-console.log('[SHIFT CONFIG] Конфигурация загружена:', window.shiftSolutionsConfig.length, 'решений');
+console.log('[SUPER CONFIG] Конфигурация загружена:', window.dbmSuperSolutionsConfig.length, 'решений');
 
 /**
  * Вспомогательная функция для "умного" и быстрого ожидания элемента в DOM.
@@ -244,7 +244,7 @@ console.log('[SHIFT CONFIG] Конфигурация загружена:', windo
  * @param {string} selector - CSS-селектор элемента.
  * @returns {Promise<Element>}
  */
-function waitForElement(selector) {
+function dbmWaitForElement(selector) {
     return new Promise(resolve => {
         const el = document.querySelector(selector);
         if (el) return resolve(el);
@@ -264,21 +264,21 @@ function waitForElement(selector) {
  * Главная функция отрисовки. Создает вкладку и карточки модов.
  * РЕШАЕТ ПРОБЛЕМЫ №4 и №9: Создает вкладку и карточки по структуре Tilda.
  */
-async function renderShiftPanel() {
-    console.log('[SHIFT] Начинаем отрисовку панели SHIFT...');
+async function dbmRenderSuperPanel() {
+    console.log('[SUPER] Начинаем отрисовку панели SUPER...');
     
     // Ждем, пока Tilda загрузит свою библиотеку
-    const libraryContainer = await waitForElement('.tp-library__body');
-    const rightSideContainer = await waitForElement('.tp-library-rightside');
+    const libraryContainer = await dbmWaitForElement('.tp-library__body');
+    const rightSideContainer = await dbmWaitForElement('.tp-library-rightside');
 
-    console.log('[SHIFT] Контейнеры Tilda найдены, создаем интерфейс...');
+    console.log('[SUPER] Контейнеры Tilda найдены, создаем интерфейс...');
 
-    // --- 1. Создание кастомной вкладки "SHIFT" ---
+    // --- 1. Создание кастомной вкладки "SUPER" ---
     const categoryHTML = `
-        <div class="tp-library__type-body" id="shift-category-tab" data-library-type-id="-shift-mods">
+        <div class="tp-library__type-body" id="super-category-tab" data-library-type-id="-super-mods">
             <div class="tp-library__type">
                 <div class="tp-library__type-title-wrapper">
-                    <div class="tp-library__type-title" style="font-weight: 600;">SHIFT Моды</div>
+                    <div class="tp-library__type-title" style="font-weight: 600;">SUPER Моды</div>
                 </div>
             </div>
         </div>
@@ -286,25 +286,25 @@ async function renderShiftPanel() {
     libraryContainer.insertAdjacentHTML('afterbegin', categoryHTML);
 
     // --- 2. Создание контейнера для карточек наших модов ---
-    const shiftBlocksContainerHTML = `
-        <div class="tp-library__tpls-list-body" id="tplslist-shift-mods" data-tpls-for-type="-shift-mods" style="display: none;">
+    const superBlocksContainerHTML = `
+        <div class="tp-library__tpls-list-body" id="tplslist-super-mods" data-tpls-for-type="-super-mods" style="display: none;">
             <div class="tp-library__tpls-list-body__container">
                 </div>
         </div>
     `;
-    rightSideContainer.insertAdjacentHTML('beforeend', shiftBlocksContainerHTML);
-    const blocksContainer = rightSideContainer.querySelector('#tplslist-shift-mods .tp-library__tpls-list-body__container');
+    rightSideContainer.insertAdjacentHTML('beforeend', superBlocksContainerHTML);
+    const blocksContainer = rightSideContainer.querySelector('#tplslist-super-mods .tp-library__tpls-list-body__container');
 
     // --- 3. Генерация и вставка карточек модов ---
     // Убедитесь, что у вас в проекте есть файл config.js с этой переменной
-    if (typeof window.shiftSolutionsConfig === 'undefined') {
-        console.error('SHIFT: Конфиг shiftSolutionsConfig не найден!');
+    if (typeof window.dbmSuperSolutionsConfig === 'undefined') {
+        console.error('SUPER: Конфиг dbmSuperSolutionsConfig не найден!');
         return;
     }
 
-    console.log('[SHIFT] Создаем карточки для', window.shiftSolutionsConfig.length, 'решений...');
+    console.log('[SUPER] Создаем карточки для', window.dbmSuperSolutionsConfig.length, 'решений...');
 
-    window.shiftSolutionsConfig.forEach(config => {
+    window.dbmSuperSolutionsConfig.forEach(config => {
         // РЕШАЕТ ПРОБЛЕМУ №8 и №9: Используем структуру Tilda для карточки и подтягиваем данные (cod, title)
         const cardHTML = `
             <div class="tp-library__tpl-body" data-solution-code="${config.solutionCode}" data-tpl-id="131">
@@ -326,47 +326,47 @@ async function renderShiftPanel() {
         blocksContainer.insertAdjacentHTML('beforeend', cardHTML);
     });
 
-    console.log('[SHIFT] Карточки созданы, добавляем обработчики событий...');
-    addEventListeners();
+    console.log('[SUPER] Карточки созданы, добавляем обработчики событий...');
+    dbmAddEventListeners();
 }
 
 /**
  * Добавляет все необходимые обработчики событий.
  */
-function addEventListeners() {
-    const shiftTab = document.getElementById('shift-category-tab');
-    const shiftBlocksPanel = document.getElementById('tplslist-shift-mods');
+function dbmAddEventListeners() {
+    const superTab = document.getElementById('super-category-tab');
+    const superBlocksPanel = document.getElementById('tplslist-super-mods');
 
     // --- Логика переключения вкладок ---
     // РЕШАЕТ ПРОБЛЕМУ №5: Добавляет/убирает классы для корректного отображения.
-    shiftTab.addEventListener('click', () => {
-        console.log('[SHIFT] Переключаемся на вкладку SHIFT...');
+    superTab.addEventListener('click', () => {
+        console.log('[SUPER] Переключаемся на вкладку SUPER...');
         
         document.querySelectorAll('.tp-library__type-body_active').forEach(el => el.classList.remove('tp-library__type-body_active'));
-        shiftTab.classList.add('tp-library__type-body_active');
+        superTab.classList.add('tp-library__type-body_active');
         
         document.querySelectorAll('.tp-library__tpls-list-body_active').forEach(el => el.classList.remove('tp-library__tpls-list-body_active'));
-        shiftBlocksPanel.classList.add('tp-library__tpls-list-body_active');
-        shiftBlocksPanel.style.display = 'block';
+        superBlocksPanel.classList.add('tp-library__tpls-list-body_active');
+        superBlocksPanel.style.display = 'block';
         
         document.querySelector('.tp-library').classList.add('tp-library_rightsideopened');
         
-        console.log('[SHIFT] Вкладка SHIFT активирована');
+        console.log('[SUPER] Вкладка SUPER активирована');
     });
 
     // --- Логика добавления блока по клику на карточку ---
     // РЕШАЕТ ПРОБЛЕМЫ №2, №6, №7: Полный цикл добавления и сохранения блока.
-    document.querySelectorAll('#tplslist-shift-mods .tp-library__tpl-body').forEach(card => {
+    document.querySelectorAll('#tplslist-super-mods .tp-library__tpl-body').forEach(card => {
         card.addEventListener('click', async () => {
             const solutionCode = card.dataset.solutionCode;
-            const config = window.shiftSolutionsConfig.find(s => s.solutionCode === solutionCode);
+            const config = window.dbmSuperSolutionsConfig.find(s => s.solutionCode === solutionCode);
 
             if (!config) {
-                console.error('[SHIFT] Конфигурация не найдена для:', solutionCode);
+                console.error('[SUPER] Конфигурация не найдена для:', solutionCode);
                 return;
             }
 
-            console.log(`[SHIFT] Добавляем блок для мода "${config.title}"`);
+            console.log(`[SUPER] Добавляем блок для мода "${config.title}"`);
 
             try {
                 // 1. Скрываем библиотеку самым надежным способом - симуляцией клика.
@@ -374,7 +374,7 @@ function addEventListeners() {
                 if (closeButton) {
                     closeButton.click();
                 } else {
-                    console.error('[SHIFT] Кнопка закрытия библиотеки не найдена.');
+                    console.error('[SUPER] Кнопка закрытия библиотеки не найдена.');
                     // Попытка вызова функции напрямую как запасной вариант
                     const tildaHideLibrary = window.tp__library__hide || window.tp__library__close || window.tpgallery_close;
                     if (typeof tildaHideLibrary === 'function') {
@@ -383,18 +383,18 @@ function addEventListeners() {
                         return; // Прерываем выполнение, если ничего не сработало
                     }
                 }
-                console.log('[SHIFT] Библиотека скрыта');
+                console.log('[SUPER] Библиотека скрыта');
             
                 // 2. Ждем готовности API Tilda для сохранения данных.
-                await waitForFunction('tp__addRecord');
-                await waitForFunction('panel__editrecord_saveval');
-                await waitForFunction('tp__updateRecord');
-                console.log('[SHIFT] Tilda API готово.');
+                await dbmWaitForFunction('tp__addRecord');
+                await dbmWaitForFunction('panel__editrecord_saveval');
+                await dbmWaitForFunction('tp__updateRecord');
+                console.log('[SUPER] Tilda API готово.');
             
                 // 3. Добавляем пустой блок и получаем его ID.
                 const newRecId = window.tp__addRecord('123', window.afterid || '', true);
                 const fullRecId = `rec${newRecId}`;
-                console.log(`[SHIFT] Блок создан с ID: ${fullRecId}`);
+                console.log(`[SUPER] Блок создан с ID: ${fullRecId}`);
             
                 // 4. Получаем HTML-контент (динамически или статически).
                 const htmlContent = typeof config.getHtmlContent === 'function' 
@@ -402,31 +402,31 @@ function addEventListeners() {
                     : config.htmlContent;
             
                 if (!htmlContent) {
-                    console.error('[SHIFT] HTML-контент для блока не определен!');
+                    console.error('[SUPER] HTML-контент для блока не определен!');
                     return;
                 }
                 
                 // 5. ПОСЛЕДОВАТЕЛЬНО СОХРАНЯЕМ ДАННЫЕ НАПРЯМУЮ
-                console.log('[SHIFT] Сохраняем HTML контент...');
+                console.log('[SUPER] Сохраняем HTML контент...');
                 await window.panel__editrecord_saveval(fullRecId, 'html', htmlContent);
-                console.log('[SHIFT] HTML контент сохранен.');
+                console.log('[SUPER] HTML контент сохранен.');
             
-                console.log('[SHIFT] Добавляем CSS класс "dbm-block"...');
+                console.log('[SUPER] Добавляем CSS класс "dbm-block"...');
                 await window.panel__editrecord_saveval(fullRecId, 'cssclassname', 'dbm-block');
-                console.log('[SHIFT] CSS класс "dbm-block" добавлен.');
+                console.log('[SUPER] CSS класс "dbm-block" добавлен.');
                 
                 // 6. Обновляем блок на странице, чтобы все изменения отобразились.
                 await window.tp__updateRecord(fullRecId);
                 
-                console.log(`[SHIFT] Мод "${config.title}" успешно добавлен и сохранен!`);
+                console.log(`[SUPER] Мод "${config.title}" успешно добавлен и сохранен!`);
             
             } catch (error) {
-                console.error('[SHIFT] Ошибка при добавлении блока:', error);
+                console.error('[SUPER] Ошибка при добавлении блока:', error);
             }
         });
     });
 
-    console.log('[SHIFT] Обработчики событий добавлены');
+    console.log('[SUPER] Обработчики событий добавлены');
 }
 
 // ============================================================================
@@ -434,18 +434,18 @@ function addEventListeners() {
 // ============================================================================
 
 // Экспортируем функции в глобальную область видимости для отладки
-window.shiftDebug = {
+window.superDebug = {
     // Основные функции
     renderShiftPanel,
-    addEventListeners,
-    waitForElement,
+    dbmAddEventListeners,
+    dbmWaitForElement,
     
     // Данные
-    shiftSolutionsConfig: () => window.shiftSolutionsConfig,
+    dbmSuperSolutionsConfig: () => window.dbmSuperSolutionsConfig,
     
     // Функции для тестирования
     testTildaAPI: function() {
-        console.log('[SHIFT DEBUG] Проверяем доступность Tilda API...');
+        console.log('[SUPER DEBUG] Проверяем доступность Tilda API...');
         const api = {
             tpAddRecord: typeof window.tp__addRecord === 'function',
             panelEditRecord: typeof window.panel__editrecord === 'function',
@@ -453,33 +453,33 @@ window.shiftDebug = {
             recordDel: typeof window.record__del === 'function',
             recordOnoff: typeof window.record__onoff === 'function'
         };
-        console.log('[SHIFT DEBUG] Tilda API статус:', api);
+        console.log('[SUPER DEBUG] Tilda API статус:', api);
         return api;
     },
     
     testWaitForElement: async function(selector, timeout = 5000) {
-        console.log(`[SHIFT DEBUG] Тестируем ожидание элемента: ${selector}`);
+        console.log(`[SUPER DEBUG] Тестируем ожидание элемента: ${selector}`);
         const startTime = Date.now();
-        const element = await waitForElement(selector);
+        const element = await dbmWaitForElement(selector);
         const elapsedTime = Date.now() - startTime;
         
         if (element) {
-            console.log(`[SHIFT DEBUG] Элемент найден за ${elapsedTime}мс:`, element);
+            console.log(`[SUPER DEBUG] Элемент найден за ${elapsedTime}мс:`, element);
         } else {
-            console.log(`[SHIFT DEBUG] Элемент не найден за ${elapsedTime}мс`);
+            console.log(`[SUPER DEBUG] Элемент не найден за ${elapsedTime}мс`);
         }
         
         return element;
     },
     
     testAddBlock: async function(solutionCode) {
-        const config = window.shiftSolutionsConfig.find(s => s.solutionCode === solutionCode);
+        const config = window.dbmSuperSolutionsConfig.find(s => s.solutionCode === solutionCode);
         if (!config) {
-            console.error('[SHIFT DEBUG] Решение не найдено:', solutionCode);
+            console.error('[SUPER DEBUG] Решение не найдено:', solutionCode);
             return;
         }
         
-        console.log('[SHIFT DEBUG] Тестируем добавление блока:', config.title);
+        console.log('[SUPER DEBUG] Тестируем добавление блока:', config.title);
         
         try {
             // 1. Скрываем библиотеку
@@ -493,50 +493,50 @@ window.shiftDebug = {
             window.panel__editrecord(fullRecId, 'content');
             
             // 4. Ждем поле для HTML
-            const htmlTextarea = await waitForElement('#ts-control-html-code');
+            const htmlTextarea = await dbmWaitForElement('#ts-control-html-code');
             
             // 5. Вставляем код
             htmlTextarea.value = config.htmlContent;
             htmlTextarea.dispatchEvent(new Event('input', { bubbles: true }));
             
             // 6. Сохраняем
-            const saveButton = await waitForElement('.ts-btn-pro-close');
+            const saveButton = await dbmWaitForElement('.ts-btn-pro-close');
             if (saveButton) {
                 saveButton.click();
-                console.log('[SHIFT DEBUG] Блок успешно создан и сохранен!');
+                console.log('[SUPER DEBUG] Блок успешно создан и сохранен!');
             }
             
         } catch (error) {
-            console.error('[SHIFT DEBUG] Ошибка при тестировании:', error);
+            console.error('[SUPER DEBUG] Ошибка при тестировании:', error);
         }
     },
     
     listBlocks: function() {
         const blocks = document.querySelectorAll('.record[data-record-cod^="SHF"], .record[data-record-cod="T123"]');
-        console.log('[SHIFT DEBUG] Найденные SHIFT блоки:', blocks.length);
+        console.log('[SUPER DEBUG] Найденные SUPER блоки:', blocks.length);
         blocks.forEach((block, index) => {
             const recId = block.id;
             const recordCod = block.getAttribute('data-record-cod');
             const title = block.getAttribute('data-title');
-            console.log(`[SHIFT DEBUG] Блок ${index + 1}:`, { recId, recordCod, title });
+            console.log(`[SUPER DEBUG] Блок ${index + 1}:`, { recId, recordCod, title });
         });
         return blocks;
     },
     
     testFullFlow: async function(solutionCode) {
-        console.log('[SHIFT DEBUG] Тестируем полный поток создания блока...');
-        const config = window.shiftSolutionsConfig.find(s => s.solutionCode === solutionCode);
+        console.log('[SUPER DEBUG] Тестируем полный поток создания блока...');
+        const config = window.dbmSuperSolutionsConfig.find(s => s.solutionCode === solutionCode);
         if (!config) {
-            console.error('[SHIFT DEBUG] Решение не найдено:', solutionCode);
+            console.error('[SUPER DEBUG] Решение не найдено:', solutionCode);
             return;
         }
         
-        console.log('[SHIFT DEBUG] Начинаем тест для:', config.title);
+        console.log('[SUPER DEBUG] Начинаем тест для:', config.title);
         
         // Проверяем API
         const api = this.testTildaAPI();
         if (!api.tpAddRecord || !api.panelEditRecord) {
-            console.error('[SHIFT DEBUG] Tilda API недоступен');
+            console.error('[SUPER DEBUG] Tilda API недоступен');
             return;
         }
         
@@ -550,7 +550,7 @@ window.shiftDebug = {
     }
 };
 
-console.log('[SHIFT] Функции отладки доступны в window.shiftDebug');
+console.log('[SUPER] Функции отладки доступны в window.superDebug');
 
 // ============================================================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -559,10 +559,10 @@ console.log('[SHIFT] Функции отладки доступны в window.sh
 /**
  * Главная функция инициализации
  */
-async function initShiftExtension() {
-    console.log('[SHIFT] Инициализация SHIFT Extension...');
-    console.log('[SHIFT] Текущий URL:', window.location.href);
-    console.log('[SHIFT] Document ready state:', document.readyState);
+async function dbmInitSuperExtension() {
+    console.log('[SUPER] Инициализация SUPER Extension...');
+    console.log('[SUPER] Текущий URL:', window.location.href);
+    console.log('[SUPER] Document ready state:', document.readyState);
     
     try {
         // Проверяем, что мы на странице Tilda
@@ -571,12 +571,12 @@ async function initShiftExtension() {
                            window.location.href.includes('tilda.ru');
         
         if (!isTildaPage) {
-            console.log('[SHIFT] Не на странице Tilda, пропускаем инициализацию');
-            console.log('[SHIFT] Текущий URL:', window.location.href);
+            console.log('[SUPER] Не на странице Tilda, пропускаем инициализацию');
+            console.log('[SUPER] Текущий URL:', window.location.href);
             return;
         }
         
-        console.log('[SHIFT] На странице Tilda, продолжаем инициализацию');
+        console.log('[SUPER] На странице Tilda, продолжаем инициализацию');
         
         // Ждем загрузки DOM
         if (document.readyState === 'loading') {
@@ -585,29 +585,29 @@ async function initShiftExtension() {
         
         // Ждем загрузки конфигурации
         let attempts = 0;
-        while (typeof window.shiftSolutionsConfig === 'undefined' && attempts < 50) {
+        while (typeof window.dbmSuperSolutionsConfig === 'undefined' && attempts < 50) {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
         
-        if (typeof window.shiftSolutionsConfig === 'undefined') {
-            console.error('[SHIFT] Конфигурация shiftSolutionsConfig не загружена!');
+        if (typeof window.dbmSuperSolutionsConfig === 'undefined') {
+            console.error('[SUPER] Конфигурация dbmSuperSolutionsConfig не загружена!');
             return;
         }
         
-        console.log('[SHIFT] Конфигурация загружена, начинаем отрисовку...');
+        console.log('[SUPER] Конфигурация загружена, начинаем отрисовку...');
         
         // Запускаем отрисовку панели
-        await renderShiftPanel();
+        await dbmRenderSuperPanel();
         
-        console.log('[SHIFT] SHIFT Extension успешно инициализирован!');
+        console.log('[SUPER] SUPER Extension успешно инициализирован!');
         
     } catch (error) {
-        console.error('[SHIFT] Ошибка при инициализации:', error);
+        console.error('[SUPER] Ошибка при инициализации:', error);
     }
 }
 
 // Запускаем инициализацию
-console.log('[SHIFT] Запускаем инициализацию SHIFT Extension...');
-initShiftExtension();
-console.log('[SHIFT] Файл shift.js загружен полностью');
+console.log('[SUPER] Запускаем инициализацию SUPER Extension...');
+dbmInitSuperExtension();
+console.log('[SUPER] Файл super.js загружен полностью');

@@ -1,22 +1,23 @@
-// supabase.js - Локальная реализация Supabase для SHIFT Extension
+// supabase.js - Локальная реализация Supabase для SUPER Extension
+console.log('[SUPABASE] ===== ФАЙЛ SUPABASE.JS ЗАГРУЖАЕТСЯ =====');
 
 // Конфигурация Supabase
-const SHIFT_SUPABASE_CONFIG = {
+const dbmSUPER_SUPABASE_CONFIG = {
     url: 'https://wddhjwzwxeucaynfxvjn.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZGhqd3p3eGV1Y2F5bmZ4dmpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjc0NTQsImV4cCI6MjA3Mjc0MzQ1NH0.dfM39SUyQWQLi8fuZLbjA4COdNBwxoWk_sa4SI6a_u8'
 };
 
 // Создание локального Supabase клиента
-let supabase = null;
+let dbmSupabase = null;
 
 // Функция для инициализации Supabase
-function initSupabase() {
+function dbmInitSupabase() {
     try {
         console.log('[SUPABASE] Начинаем инициализацию...');
         // Создаем локальную реализацию Supabase
-        supabase = createLocalSupabaseClient();
-        console.log('[SUPABASE] Локальный клиент создан успешно:', supabase);
-        console.log('[SUPABASE] supabase.auth:', supabase?.auth);
+        dbmSupabase = dbmCreateLocalSupabaseClient();
+        console.log('[SUPABASE] Локальный клиент создан успешно:', dbmSupabase);
+        console.log('[SUPABASE] dbmSupabase.auth:', dbmSupabase?.auth);
         return true;
     } catch (error) {
         console.error('[SUPABASE] Ошибка при создании клиента:', error);
@@ -25,14 +26,14 @@ function initSupabase() {
 }
 
 // Создание локального Supabase клиента
-function createLocalSupabaseClient() {
+function dbmCreateLocalSupabaseClient() {
     return {
         auth: {
             getSession: async function() {
                 console.log('[SUPABASE] Получение сессии...');
                 
                 // Проверяем, есть ли сохраненная сессия в localStorage
-                const savedSession = localStorage.getItem('shift_demo_session');
+                const savedSession = localStorage.getItem('super_demo_session');
                 if (savedSession) {
                     try {
                         const session = JSON.parse(savedSession);
@@ -79,7 +80,7 @@ function createLocalSupabaseClient() {
                     };
                     
                     // Сохраняем сессию в localStorage
-                    localStorage.setItem('shift_demo_session', JSON.stringify(session));
+                    localStorage.setItem('super_demo_session', JSON.stringify(session));
                     
                     return {
                         data: {
@@ -149,7 +150,7 @@ function createLocalSupabaseClient() {
                 console.log('[SUPABASE] Выход из системы...');
                 
                 // Очищаем сохраненную сессию
-                localStorage.removeItem('shift_demo_session');
+                localStorage.removeItem('super_demo_session');
                 
                 return { error: null };
             }
@@ -176,32 +177,37 @@ function createLocalSupabaseClient() {
 
 // Инициализируем Supabase сразу
 if (typeof window !== 'undefined') {
-    initSupabase();
+    console.log('[SUPABASE] Вызываем dbmInitSupabase()...');
+    dbmInitSupabase();
+    console.log('[SUPABASE] dbmInitSupabase() завершена, результат:', dbmSupabase);
 }
 
 // Экспортируем конфигурацию и клиент
 if (typeof window !== 'undefined') {
-    window.SHIFT_SUPABASE_CONFIG = SHIFT_SUPABASE_CONFIG;
-    window.supabaseClient = supabase;
+    console.log('[SUPABASE] Экспортируем в window...');
+    window.dbmSUPER_SUPABASE_CONFIG = dbmSUPER_SUPABASE_CONFIG;
+    window.supabaseClient = dbmSupabase;
+    console.log('[SUPABASE] window.dbmSUPER_SUPABASE_CONFIG установлен:', !!window.dbmSUPER_SUPABASE_CONFIG);
+    console.log('[SUPABASE] window.supabaseClient установлен:', !!window.supabaseClient);
     
     // Также создаем window.supabase для совместимости
     window.supabase = {
         createClient: function(url, anonKey) {
-            return supabase;
+            return dbmSupabase;
         }
     };
 }
 
 // Функции для работы с Supabase
-const SupabaseService = {
+const dbmSupabaseService = {
     // Проверка доступности Supabase
     isAvailable: function() {
-        return supabase !== null;
+        return dbmSupabase !== null;
     },
 
     // Получение клиента
     getClient: function() {
-        return supabase;
+        return dbmSupabase;
     },
 
     // Аутентификация пользователя
@@ -211,7 +217,7 @@ const SupabaseService = {
         }
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await dbmSupabase.auth.signInWithPassword({
                 email: email,
                 password: password
             });
@@ -231,7 +237,7 @@ const SupabaseService = {
         }
 
         try {
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await dbmSupabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
@@ -254,7 +260,7 @@ const SupabaseService = {
         }
 
         try {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await dbmSupabase.auth.signOut();
             if (error) throw error;
         } catch (error) {
             console.error('[SUPABASE] Ошибка выхода:', error);
@@ -269,7 +275,7 @@ const SupabaseService = {
         }
 
         try {
-            const { data, error } = await supabase.auth.getSession();
+            const { data, error } = await dbmSupabase.auth.getSession();
             if (error) throw error;
             return data;
         } catch (error) {
@@ -285,7 +291,7 @@ const SupabaseService = {
         }
 
         try {
-            const { data, error } = await supabase
+            const { data, error } = await dbmSupabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
@@ -306,7 +312,7 @@ const SupabaseService = {
         }
 
         try {
-            const { data, error } = await supabase
+            const { data, error } = await dbmSupabase
                 .from('user_solutions')
                 .select('*')
                 .eq('user_id', userId);
@@ -322,15 +328,18 @@ const SupabaseService = {
 
 // Экспортируем сервис
 if (typeof window !== 'undefined') {
-    window.SupabaseService = SupabaseService;
+    window.SupabaseService = dbmSupabaseService;
 }
 
 console.log('[SUPABASE] Модуль Supabase загружен');
+console.log('[SUPABASE] Начинаем выполнение supabase.js...');
+
+// Инициализация уже выполнена выше
 
 // Проверяем доступность при загрузке
 if (typeof window !== 'undefined') {
     window.addEventListener('load', function() {
-        if (SupabaseService.isAvailable()) {
+        if (dbmSupabaseService.isAvailable()) {
             console.log('[SUPABASE] Сервис готов к использованию');
         } else {
             console.warn('[SUPABASE] Сервис недоступен - проверьте подключение библиотеки Supabase');

@@ -1,10 +1,10 @@
 // debug-test.js - Скрипт для тестирования расширения
 // Запустите этот код в консоли браузера на странице Tilda для диагностики
 
-console.log('=== SHIFT EXTENSION DEBUG TEST ===');
+console.log('=== SUPER EXTENSION DEBUG TEST ===');
 
 // 1. Проверяем, загружен ли content script
-console.log('1. Content script загружен:', !!window.shiftSolutionsConfig);
+console.log('1. Content script загружен:', !!window.superSolutionsConfig);
 
 // 2. Проверяем данные в storage
 chrome.storage.local.get(['userStatus', 'allSolutions', 'userProfile'], (data) => {
@@ -24,12 +24,12 @@ chrome.storage.local.get(['userStatus', 'allSolutions', 'userProfile'], (data) =
 setTimeout(() => {
     const libraryBody = document.querySelector('.tp-library__body');
     const rightSide = document.querySelector('.tp-library-rightside');
-    const shiftCategory = document.getElementById('shift-category-container');
+    const superCategory = document.getElementById('super-category-container');
     
     console.log('3. Элементы Tilda:');
     console.log('   - .tp-library__body:', !!libraryBody);
     console.log('   - .tp-library-rightside:', !!rightSide);
-    console.log('   - SHIFT категория:', !!shiftCategory);
+    console.log('   - SUPER категория:', !!superCategory);
     
     if (!libraryBody || !rightSide) {
         console.log('❌ Библиотека Tilda не найдена');
@@ -38,11 +38,11 @@ setTimeout(() => {
         console.log('✅ Библиотека Tilda найдена');
     }
     
-    if (!shiftCategory) {
-        console.log('❌ SHIFT категория не создана');
+    if (!superCategory) {
+        console.log('❌ SUPER категория не создана');
         console.log('💡 Решение: Проверьте логи content script');
     } else {
-        console.log('✅ SHIFT категория создана');
+        console.log('✅ SUPER категория создана');
     }
 }, 1000);
 

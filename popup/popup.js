@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
         // --- НАСТРОЙКА ---
         // Используем ключи из файла config.js
-        if (!window.SHIFT_SUPABASE_CONFIG) {
-            throw new Error('SHIFT_SUPABASE_CONFIG is not defined. Ensure config.js is loaded before popup.js');
+        if (!window.dbmSUPER_SUPABASE_CONFIG) {
+            throw new Error('dbmSUPER_SUPABASE_CONFIG is not defined. Ensure config.js is loaded before popup.js');
         }
-        const SUPABASE_URL = window.SHIFT_SUPABASE_CONFIG.url;
-        const SUPABASE_ANON_KEY = window.SHIFT_SUPABASE_CONFIG.anonKey;
+        const SUPABASE_URL = window.dbmSUPER_SUPABASE_CONFIG.url;
+        const SUPABASE_ANON_KEY = window.dbmSUPER_SUPABASE_CONFIG.anonKey;
         
         console.log('[POPUP] Supabase config:', { url: SUPABASE_URL, keyLength: SUPABASE_ANON_KEY.length });
         
@@ -340,10 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
         supabaseWaitAttempts++;
         
         console.log(`[POPUP] Попытка ${supabaseWaitAttempts}/${maxSupabaseWaitAttempts} загрузки Supabase...`);
-        console.log('[POPUP] SHIFT_SUPABASE_CONFIG:', !!window.SHIFT_SUPABASE_CONFIG);
+        console.log('[POPUP] dbmSUPER_SUPABASE_CONFIG:', !!window.dbmSUPER_SUPABASE_CONFIG);
         console.log('[POPUP] window.supabaseClient:', !!window.supabaseClient);
         
-        if (window.SHIFT_SUPABASE_CONFIG && window.supabaseClient) {
+        if (window.dbmSUPER_SUPABASE_CONFIG && window.supabaseClient) {
             console.log('[POPUP] Supabase загружен, инициализируем popup...');
             await initPopup();
         } else if (supabaseWaitAttempts >= maxSupabaseWaitAttempts) {
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>Попробуйте перезагрузить расширение.</p>
                         <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
                             <strong>Диагностика:</strong><br>
-                            SHIFT_SUPABASE_CONFIG: ${window.SHIFT_SUPABASE_CONFIG ? '✅' : '❌'}<br>
+                            dbmSUPER_SUPABASE_CONFIG: ${window.dbmSUPER_SUPABASE_CONFIG ? '✅' : '❌'}<br>
                             window.supabaseClient: ${window.supabaseClient ? '✅' : '❌'}<br>
                             Попыток загрузки: ${supabaseWaitAttempts}
                         </div>

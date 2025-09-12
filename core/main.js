@@ -1,5 +1,10 @@
 // core/main.js
-const SHIFT_APP = {
+console.log('[MAIN] SUPER расширение загружается...');
+console.log('[MAIN] URL:', window.location.href);
+console.log('[MAIN] Chrome доступен:', !!window.chrome);
+console.log('[MAIN] Chrome storage доступен:', !!window.chrome?.storage);
+
+const dbmSUPER_APP = {
     isPanelOpen: false,
     elements: {},
 
@@ -11,7 +16,7 @@ const SHIFT_APP = {
             js: 'features/super-hover/super-hover.js',
             css: 'features/super-hover/super-hover.css',
             // Имя объекта, у которого нужно вызвать метод .init() после загрузки скрипта
-            initializer: 'HoverArchitect'
+            initializer: 'dbmHoverArchitect'
         },
         'super-grid': {
             title: 'Super Grid',
@@ -20,6 +25,10 @@ const SHIFT_APP = {
         'super-slider': {
             title: 'Super Slider',
             description: 'Мощный конструктор слайдеров (в разработке)',
+            js: 'features/super-slider/super-slider.js',
+            css: 'features/super-slider/super-slider.css',
+            // Имя объекта, у которого нужно вызвать метод .init() после загрузки скрипта
+            initializer: 'dbmSwiperArchitect'
         },
         'tilda-mods': {
             title: 'Tilda Mods',
@@ -32,31 +41,45 @@ const SHIFT_APP = {
     },
 
     init() {
-        console.log('[MAIN] SHIFT_APP инициализируется...');
+        console.log('[MAIN] dbmSUPER_APP инициализируется...');
+        console.log('[MAIN] Проверяем доступность chrome.storage:', !!chrome?.storage);
         
         // Ждем, пока пользователь войдет в систему
-        chrome.storage.local.get('userStatus', (data) => {
-            console.log('[MAIN] Проверка статуса пользователя:', data);
-            if (data.userStatus === 'loggedIn') {
-                console.log('[MAIN] Пользователь вошел в систему, создаем UI...');
-                this.buildUI();
+        try {
+            if (chrome?.storage?.local) {
+                chrome.storage.local.get('userStatus', (data) => {
+                    console.log('[MAIN] Проверка статуса пользователя:', data);
+                    if (data.userStatus === 'loggedIn') {
+                        console.log('[MAIN] Пользователь вошел в систему, создаем UI...');
+                        this.buildUI();
+                    } else {
+                        console.log('[MAIN] Пользователь не вошел в систему, UI не создается');
+                        console.log('[MAIN] Для тестирования можно установить статус: chrome.storage.local.set({userStatus: "loggedIn"})');
+                    }
+                });
             } else {
-                console.log('[MAIN] Пользователь не вошел в систему, UI не создается');
+                console.error('[MAIN] chrome.storage недоступен!');
             }
-        });
+        } catch (error) {
+            console.error('[MAIN] Ошибка при работе с chrome.storage:', error);
+        }
 
         // Слушаем сообщения от других частей расширения
-        chrome.runtime.onMessage.addListener((message) => {
-            console.log('[MAIN] Получено сообщение:', message);
-            if (message.type === 'USER_LOGGED_IN') {
-                console.log('[MAIN] Получен сигнал входа, создаем UI...');
-                this.buildUI();
-            }
-            if (message.type === 'USER_LOGGED_OUT') {
-                console.log('[MAIN] Получен сигнал выхода, уничтожаем UI...');
-                this.destroyUI();
-            }
-        });
+        if (chrome?.runtime?.onMessage) {
+            chrome.runtime.onMessage.addListener((message) => {
+                console.log('[MAIN] Получено сообщение:', message);
+                if (message.type === 'USER_LOGGED_IN') {
+                    console.log('[MAIN] Получен сигнал входа, создаем UI...');
+                    this.buildUI();
+                }
+                if (message.type === 'USER_LOGGED_OUT') {
+                    console.log('[MAIN] Получен сигнал выхода, уничтожаем UI...');
+                    this.destroyUI();
+                }
+            });
+        } else {
+            console.error('[MAIN] chrome.runtime недоступен!');
+        }
     },
 
     buildUI() {
@@ -75,9 +98,9 @@ const SHIFT_APP = {
         console.log('[MAIN] UI успешно создан!');
 
         // Слушаем, когда панель Super Hover (или другая) закроется
-        document.addEventListener('shift-panel-closed', () => {
+        document.addEventListener('super-panel-closed', () => {
             this.isPanelOpen = false;
-            this.elements.floatingIcon.classList.remove('shift-hidden');
+            this.elements.floatingIcon.classList.remove('super-hidden');
         });
     },
 
@@ -88,16 +111,34 @@ const SHIFT_APP = {
     },
 
     createFloatingIcon() {
+        console.log('[MAIN] Создаем плавающую иконку...');
         this.elements.floatingIcon = document.createElement('div');
-        this.elements.floatingIcon.id = 'shift-floating-icon';
-        this.elements.floatingIcon.innerHTML = `<img src="${chrome.runtime.getURL('assets/icon128.png')}" alt="SHIFT">`;
+        this.elements.floatingIcon.id = 'super-floating-icon';
+        
+        // Используем текст вместо картинки для надежности
+        this.elements.floatingIcon.innerHTML = `
+            <div style="color: white; font-weight: bold; font-size: 14px;">SUPER</div>
+        `;
+        
         document.body.appendChild(this.elements.floatingIcon);
+        console.log('[MAIN] Плавающая иконка добавлена в DOM');
+        
+        // Проверяем, что иконка действительно в DOM
+        setTimeout(() => {
+            const icon = document.getElementById('super-floating-icon');
+            if (icon) {
+                console.log('[MAIN] ✅ Иконка найдена в DOM:', icon);
+                console.log('[MAIN] Стили иконки:', window.getComputedStyle(icon));
+            } else {
+                console.error('[MAIN] ❌ Иконка НЕ найдена в DOM!');
+            }
+        }, 100);
     },
 
     createSolutionsWindow() {
         this.elements.solutionsWindow = document.createElement('div');
-        this.elements.solutionsWindow.id = 'shift-solutions-window';
-        this.elements.solutionsWindow.classList.add('shift-hidden');
+        this.elements.solutionsWindow.id = 'super-solutions-window';
+        this.elements.solutionsWindow.classList.add('super-hidden');
 
         let cardsHTML = '';
         for (const key in this.solutions) {
@@ -121,61 +162,94 @@ const SHIFT_APP = {
     addEventListeners() {
         this.elements.floatingIcon.addEventListener('click', () => {
             if (this.isPanelOpen) return;
-            this.elements.solutionsWindow.classList.toggle('shift-hidden');
+            this.elements.solutionsWindow.classList.toggle('super-hidden');
         });
 
         this.elements.solutionsWindow.addEventListener('click', (e) => {
             const card = e.target.closest('.card');
             if (card) {
-                this.elements.solutionsWindow.classList.add('shift-hidden');
+                this.elements.solutionsWindow.classList.add('super-hidden');
                 const solutionKey = card.dataset.solutionKey;
                 this.launchSolution(solutionKey);
             }
         });
     },
 
-    async launchSolution(key) {
-        console.log('[MAIN] launchSolution вызвана для:', key);
-        const solution = this.solutions[key];
-        if (!solution || !solution.js) {
-            console.log('[MAIN] Решение не найдено или в разработке:', key);
-            alert(`${solution.title} находится в разработке!`);
-            return;
-        }
-
-        console.log('[MAIN] Запускаем решение:', solution.title);
-        this.isPanelOpen = true;
-        this.elements.floatingIcon.classList.add('shift-hidden');
 
 
 
-        if (solution.css) {
-            console.log('[MAIN] Загружаем CSS:', solution.css);
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = chrome.runtime.getURL(solution.css);
-            document.head.appendChild(link);
-        }
 
-        console.log('[MAIN] Загружаем JS:', solution.js);
-        const script = document.createElement('script');
-        script.src = chrome.runtime.getURL(solution.js);
-        script.onload = () => {
-            console.log('[MAIN] Скрипт загружен, проверяем инициализатор:', solution.initializer);
-            if (solution.initializer && window[solution.initializer]) {
-                console.log('[MAIN] Вызываем инициализатор:', solution.initializer + '.init()');
-                // Вызываем метод .init() у нужного объекта, например, HoverArchitect.init()
-                window[solution.initializer].init();
-            } else {
-                console.log('[MAIN] Инициализатор не найден или не определен');
-            }
-            script.remove();
-        };
-        script.onerror = (error) => {
-            console.error('[MAIN] Ошибка загрузки скрипта:', error);
-        };
-        document.body.appendChild(script);
+
+
+
+
+
+
+
+
+
+
+
+// ✅ ВСТАВЬТЕ ЭТОТ КОД ВМЕСТО ВСЕЙ ВАШЕЙ ФУНКЦИИ launchSolution
+async launchSolution(key) {
+    console.log('[MAIN] launchSolution вызвана для:', key);
+    const solution = this.solutions[key];
+    if (!solution || !solution.js) {
+        console.log('[MAIN] Решение не найдено или в разработке:', key);
+        alert(`${solution.title} находится в разработке!`);
+        return;
     }
+
+    console.log('[MAIN] Запускаем решение:', solution.title);
+    this.isPanelOpen = true;
+    this.elements.floatingIcon.classList.add('super-hidden');
+
+    // 1. Внедряем CSS, если он есть
+    if (solution.css) {
+        console.log('[MAIN] Загружаем CSS:', solution.css);
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = chrome.runtime.getURL(solution.css);
+        document.head.appendChild(link);
+    }
+
+    // 2. Внедряем JS и позволяем ему самому себя запустить
+    console.log('[MAIN] Внедряем скрипт:', solution.js);
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL(solution.js);
+    script.type = 'module'; // Это важно для правильного выполнения
+
+    script.onload = () => {
+        // Просто сообщаем, что скрипт успешно загружен.
+        // Никаких вызовов .init() отсюда!
+        console.log(`[MAIN] Скрипт ${solution.js} успешно добавлен на страницу.`);
+    };
+
+    script.onerror = (error) => {
+        console.error('[MAIN] Ошибка загрузки скрипта:', solution.js, error);
+    };
+
+    document.head.appendChild(script);
+}
+
+
+
+
+
+
+
 };
 
-SHIFT_APP.init();
+// Безопасная инициализация
+try {
+    console.log('[MAIN] Начинаем инициализацию dbmSUPER_APP...');
+    dbmSUPER_APP.init();
+    console.log('[MAIN] Инициализация dbmSUPER_APP завершена успешно');
+    
+    // Делаем dbmSUPER_APP доступным глобально для отладки
+    window.dbmSUPER_APP = dbmSUPER_APP;
+    console.log('[MAIN] dbmSUPER_APP доступен как window.dbmSUPER_APP');
+    console.log('[MAIN] Для принудительного создания UI: dbmSUPER_APP.buildUI()');
+} catch (error) {
+    console.error('[MAIN] Ошибка при инициализации dbmSUPER_APP:', error);
+}

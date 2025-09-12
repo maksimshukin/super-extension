@@ -1,5 +1,5 @@
 /* core/main.css */
-#shift-floating-icon {
+#super-floating-icon {
     position: fixed;
     bottom: 30px;
     right: 30px;
@@ -18,22 +18,22 @@
     visibility: visible;
   }
   
-  #shift-floating-icon:hover {
+  #super-floating-icon:hover {
     transform: scale(1.1);
   }
   
-  #shift-floating-icon.shift-hidden {
+  #super-floating-icon.super-hidden {
     opacity: 0;
     visibility: hidden;
     transform: scale(0.8);
   }
   
-  #shift-floating-icon img {
+  #super-floating-icon img {
     width: 32px;
     height: 32px;
   }
   
-  #shift-solutions-window {
+  #super-solutions-window {
     position: fixed;
     bottom: 100px;
     right: 30px;
@@ -48,36 +48,36 @@
     transition: opacity 0.2s, transform 0.2s;
   }
   
-  #shift-solutions-window.shift-hidden {
+  #super-solutions-window.super-hidden {
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px);
     pointer-events: none;
   }
   
-  #shift-solutions-window .card {
+  #super-solutions-window .card {
     padding: 15px 20px;
     cursor: pointer;
     transition: background-color 0.2s;
     border-bottom: 1px solid #f0f0f0;
   }
   
-  #shift-solutions-window .card:last-child {
+  #super-solutions-window .card:last-child {
     border-bottom: none;
   }
   
-  #shift-solutions-window .card:hover {
+  #super-solutions-window .card:hover {
     background-color: #f9f9f9;
   }
   
-  #shift-solutions-window .card h4 {
+  #super-solutions-window .card h4 {
     margin: 0 0 5px 0;
     color: #23272c;
     font-size: 16px;
     font-weight: 500;
   }
   
-  #shift-solutions-window .card p {
+  #super-solutions-window .card p {
     margin: 0;
     color: #6B7280;
     font-size: 13px;
