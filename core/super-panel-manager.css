@@ -1,3 +1,460 @@
+/* 
+  SUPER PANEL MANAGER STYLES
+  --------------------------
+  These are the core styles for the main panel, buttons, inputs, and other UI elements
+  that will be shared across all solutions.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&display=swap');
+
+:root {
+    --dbm-bg-color: #F9F9F9;
+    --dbm-panel-bg: #ffffff;
+    --dbm-input-bg: #F3F4F6;
+    --dbm-text-primary: #23272c;
+    --dbm-text-secondary: #6B7280;
+    --dbm-primary-color: #23272c;
+    --dbm-primary-hover: #4a5460;
+    --dbm-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --dbm-radius: 20px;
+    --dbm-radius-inner: 16px;
+    --dbm-transition: all 0.2s ease-in-out;
+    --dbm-secondary-bg: #e9eaeb;
+    --dbm-secondary-hover: #dfe0e1;
+    
+    /* === BUTTON SYSTEM VARIABLES === */
+    /* Regular buttons */
+    --dbm-btn-height: 44px;
+    --dbm-btn-icon-size: 24px;
+    --dbm-btn-padding: 12px 16px;
+    --dbm-btn-radius: var(--dbm-radius-inner);
+    
+    /* Small buttons */
+    --dbm-btn-sm-height: 32px;
+    --dbm-btn-sm-icon-size: 20px;
+    --dbm-btn-sm-padding: 6px 12px;
+    --dbm-btn-sm-radius: 12px;
+    
+    /* Icon-only buttons */
+    --dbm-btn-icon-width: 44px;
+    --dbm-btn-icon-height: 44px;
+    --dbm-btn-icon-sm-width: 32px;
+    --dbm-btn-icon-sm-height: 32px;
+    
+    /* Colors */
+    --dbm-btn-primary-bg: var(--dbm-primary-color);
+    --dbm-btn-primary-hover: var(--dbm-primary-hover);
+    --dbm-btn-primary-text: white;
+    --dbm-btn-secondary-bg: var(--dbm-input-bg);
+    --dbm-btn-secondary-hover: var(--dbm-secondary-hover);
+    --dbm-btn-secondary-text: var(--dbm-text-primary);
+}
+
+/* --- SELECTION & HIGHLIGHT STYLES --- */
+body.selection-active,
+body.selection-active * {
+    cursor: crosshair !important;
+}
+
+.dbm-highlight-element {
+    outline: 2px dashed var(--dbm-primary-color) !important;
+    background-color: rgba(35, 39, 44, 0.1) !important;
+    box-shadow: 0 0 15px rgba(35, 39, 44, 0.2);
+    z-index: 99998 !important;
+}
+
+/* --- INSPECTOR TOOLTIP --- */
+#dbm-inspector-tooltip {
+    position: absolute;
+    z-index: 99999;
+    width: auto;
+    min-width: 300px;
+    max-width: 400px;
+    background-color: #F1F2F6;
+    color: var(--dbm-text-primary);
+    border-radius: 20px;
+    box-shadow: var(--dbm-shadow);
+    padding: 8px;
+    display: none;
+    border: 2px solid #E6EAED;
+    font-size: 14px;
+    pointer-events: none;
+}
+.dbm-inspector-section {
+    padding: 8px;
+}
+.dbm-inspector-section h4 {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.dbm-selector-list-group {
+    border-bottom: 1px solid #b7c6d2;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+.dbm-selector-list-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.dbm-selector-tag {
+    background-color: white;
+    color: #404b54;
+    padding: 8px;
+    border-radius: 12px;
+    font-family: sans-serif;
+    display: inline-block;
+    margin: 4px;
+    font-size: 14px;
+}
+
+/* --- MAIN PANEL --- */
+#dbm-editor-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 999999999;
+    width: 420px;
+    min-width: 380px;
+    max-width: 800px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--dbm-panel-bg);
+    box-shadow: var(--dbm-shadow);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    border-left: 1px solid #F3F4F6;
+    overflow: hidden;
+    font-family: 'Onest', sans-serif;
+}
+.dbm-content-and-footer-wrapper{
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+#dbm-editor-panel.collapsed {
+    transform: translateX(calc(100% + 20px));
+    opacity: 0;
+    pointer-events: none;
+}
+#dbm-panel-resize-handle {
+    position: absolute;
+    top: 0;
+    left: -5px;
+    width: 10px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10001;
+}
+#dbm-panel-toggle-collapsed {
+    position: fixed;
+    top: 20px;
+    right: -50px;
+    z-index: 9999;
+    width: 40px;
+    height: 40px;
+    background-color: var(--dbm-primary-color);
+    color: white;
+    border-radius: var(--dbm-radius-inner) 0 0 var(--dbm-radius-inner);
+    box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+#dbm-editor-panel.collapsed + #dbm-panel-toggle-collapsed {
+    opacity: 1;
+    right: 0;
+}
+
+
+/* --- PANEL HEADER & CONTENT --- */
+#dbm-panel-header {
+    padding: 12px;
+    border-bottom: 1px solid #F3F4F6;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* Скрываем заголовок когда контент пустой (на первом экране) */
+#dbm-panel-header-content:empty {
+    display: none;
+}
+#dbm-panel-header:has(#dbm-panel-header-content:empty) {
+    display: none;
+    padding: 0;
+    border-bottom: none;
+}
+
+#dbm-panel-header-content {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#dbm-panel-close-btn,
+#dbm-panel-minimize-btn,
+#dbm-panel-back-btn {
+    flex-shrink: 0;
+    /* width: 40px;
+    height: 40px; */
+    background-color: var(--dbm-input-bg);
+    /* border-radius: 12px; */
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+#dbm-panel-close-btn:hover,
+#dbm-panel-minimize-btn:hover,
+#dbm-panel-back-btn:hover {
+    background-color: var(--dbm-secondary-hover);
+}
+
+.dbm-panel-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#dbm-panel-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding:  12px;
+    box-sizing: border-box;
+    position: relative;
+    background-color: #f3f4f6;
+    width: 100% !important;
+}
+#dbm-panel-content::-webkit-scrollbar { width: 6px; }
+#dbm-panel-content::-webkit-scrollbar-track { background: transparent; }
+#dbm-panel-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px;}
+#dbm-panel-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+
+/* --- MODAL OVERLAY --- */
+#dbm-panel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgb(0 0 0 / 50%);
+    backdrop-filter: blur(4px);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    border-radius: var(--dbm-radius);
+}
+#dbm-panel-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* === UNIFIED BUTTON SYSTEM === */
+
+/* Base button styles */
+.dbm-btn {
+    height: var(--dbm-btn-height);
+    padding: var(--dbm-btn-padding);
+    border-radius: var(--dbm-btn-radius);
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    border: none;
+    font-size: 14px;
+    transition: var(--dbm-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Small buttons */
+.dbm-btn-sm {
+    height: var(--dbm-btn-sm-height);
+    padding: var(--dbm-btn-sm-padding);
+    border-radius: var(--dbm-btn-sm-radius);
+    font-size: 0.875rem;
+    width: auto;
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    border: none;
+    transition: var(--dbm-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+/* Icon-only buttons */
+.dbm-btn-icon {
+    width: var(--dbm-btn-icon-width);
+    height: var(--dbm-btn-icon-height);
+    padding: 0;
+    border-radius: var(--dbm-btn-radius);
+    cursor: pointer;
+    border: none;
+    transition: var(--dbm-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* Small icon-only buttons */
+.dbm-btn-sm.dbm-btn-icon {
+    width: var(--dbm-btn-icon-sm-width);
+    height: var(--dbm-btn-icon-sm-height);
+    border-radius: var(--dbm-btn-sm-radius);
+    padding: 6px;
+}
+
+/* Primary color variants */
+.dbm-btn.dbm-btn-primary,
+.dbm-btn-sm.dbm-btn-primary,
+.dbm-btn-icon.dbm-btn-primary {
+    background-color: var(--dbm-btn-primary-bg);
+    color: var(--dbm-btn-primary-text);
+}
+
+.dbm-btn.dbm-btn-primary:not(:disabled):hover,
+.dbm-btn-sm.dbm-btn-primary:not(:disabled):hover,
+.dbm-btn-icon.dbm-btn-primary:not(:disabled):hover {
+    background-color: var(--dbm-btn-primary-hover);
+}
+
+/* Secondary color variants */
+.dbm-btn.dbm-btn-secondary,
+.dbm-btn-sm.dbm-btn-secondary,
+.dbm-btn-icon.dbm-btn-secondary {
+    background-color: var(--dbm-btn-secondary-bg);
+    color: var(--dbm-btn-secondary-text);
+}
+
+.dbm-btn.dbm-btn-secondary:not(:disabled):hover,
+.dbm-btn-sm.dbm-btn-secondary:not(:disabled):hover,
+.dbm-btn-icon.dbm-btn-secondary:not(:disabled):hover {
+    background-color: var(--dbm-btn-secondary-hover);
+}
+
+/* Disabled state */
+.dbm-btn:disabled,
+.dbm-btn-sm:disabled,
+.dbm-btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Icon sizes */
+.dbm-btn svg,
+.dbm-btn-icon svg {
+    width: var(--dbm-btn-icon-size);
+    height: var(--dbm-btn-icon-size);
+}
+
+.dbm-btn-sm svg,
+.dbm-btn-sm.dbm-btn-icon svg {
+    width: var(--dbm-btn-sm-icon-size);
+    height: var(--dbm-btn-sm-icon-size);
+}
+
+.dbm-subsection {
+    margin-top: 10px;
+    padding: 20px !important;
+    background-color: white;
+    border-radius: 20px;
+    box-sizing:border-box;
+}
+.dbm-subsection:first-child {
+    margin-top: 0;
+}
+.dbm-subsection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.dbm-subsection-header h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.4px;
+}
+
+.dbm-form-group {
+    margin-bottom: 16px;
+}
+.dbm-form-group:last-child { margin-bottom: 0; }
+.dbm-form-group label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: var(--dbm-text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.dbm-form-group input,
+.dbm-form-group select,
+.dbm-form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--dbm-radius-inner);
+    height: 50px;
+    background-color: var(--dbm-input-bg);
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--dbm-text-primary);
+    transition: var(--dbm-transition);
+    box-sizing: border-box;
+}
+.dbm-form-group textarea { height: auto; resize: vertical; }
+.dbm-form-group input:focus,
+.dbm-form-group select:focus,
+.dbm-form-group textarea:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--dbm-secondary-hover);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Панель super-hover */
+
 @import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&display=swap');
 
 :root {
@@ -164,62 +621,7 @@ background-size: 200% 200%;
     margin-left: 8px;
 }
 
-/* --- ОСНОВНАЯ ПАНЕЛЬ --- */
-#dbm-editor-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 999999999999999999;
-    width: 420px;
-    min-width: 380px;
-    max-width: 800px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--dbm-panel-bg);
-    box-shadow: var(--dbm-shadow);
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    border-left: 1px solid #F3F4F6;
-    overflow: hidden;
-    font-family: 'Onest', sans-serif;
-}
-#dbm-editor-panel.collapsed {
-    transform: translateX(calc(100% + 20px));
-    opacity: 0;
-    pointer-events: none;
-}
-#dbm-panel-resize-handle {
-    position: absolute;
-    top: 0;
-    left: -5px;
-    width: 10px;
-    height: 100%;
-    cursor: col-resize;
-    z-index: 10001;
-}
-#dbm-panel-toggle-collapsed {
-    position: fixed;
-    top: 20px;
-    right: -50px;
-    z-index: 9999;
-    width: 40px;
-    height: 40px;
-    background-color: var(--dbm-primary-color);
-    color: white;
-    border-radius: var(--dbm-radius-inner) 0 0 var(--dbm-radius-inner);
-    box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    transition: all 0.3s ease-in-out;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-}
-#dbm-editor-panel.collapsed + #dbm-panel-toggle-collapsed {
-    opacity: 1;
-    right: 0;
-}
+/* Дублирующиеся стили панели удалены - используются стили выше */
 
 /* --- ШАПКА ПАНЕЛИ --- */
 #dbm-panel-top-toolbar {
@@ -228,15 +630,17 @@ background-size: 200% 200%;
     align-items: center;
     gap: 8px;
     padding: 12px;
+    position: relative;
+    z-index: 1002;
+    background-color: var(--dbm-panel-bg);
     border-bottom: 1px solid #F3F4F6;
     flex-shrink: 0;
 }
 .dbm-panel-main-title-wrapper {
     display: flex;
-    justify-content: space-between;
-    width: fit-content;
     align-items: center;
     gap: 10px;
+    flex-grow: 1;
 }
 .dbm-panel-main-title {
     font-size: 20px;
@@ -244,22 +648,18 @@ background-size: 200% 200%;
     letter-spacing: -0.4px;
     margin: 0;
 }
-#dbm-panel-header {
-    padding: 12px;
-    border-bottom: 1px solid #F3F4F6;
-    flex-shrink: 0;
-    background-color: #f3f4f6;
-}
+/* Дублирующиеся стили заголовка удалены - используются стили выше */
 #dbm-panel-header .dbm-header-main-row {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
     width: 100%;
     padding: 20px;
     background-color: #D5DADD;
     box-sizing: border-box;
-    border-radius: 20px 20px 0px 0px;
-    border-bottom: 1px solid #e6eaed;
+    border-radius: 20px;
+    /* border-bottom: 1px solid #e6eaed; */
 }
 #dbm-panel-header .dbm-header-title-group {
     display: flex;
@@ -286,9 +686,17 @@ background-size: 200% 200%;
     text-overflow: ellipsis;
 }
 #dbm-panel-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #F3F4F6;
+    background-color: var(--dbm-panel-bg);
+    flex-shrink: 0;
     display: flex;
     flex-direction: row-reverse;
     gap: 10px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    margin-top: auto;
 }
 
 #dbm-copy-code-btn {
@@ -307,6 +715,7 @@ background-size: 200% 200%;
     gap: 8px;
     background-color: #f3f4f6;
     box-sizing: content-box;
+    flex-shrink: 0;
 }
 
 #dbm-copy-code-btn svg{
@@ -367,26 +776,9 @@ background-size: 200% 200%;
 }
 
 /* --- КОНТЕНТ ПАНЕЛИ --- */
-#dbm-panel-content {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 0 12px 12px 12px;
-    position: relative;
-    background-color: #f3f4f6;
-}
-#dbm-panel-content::-webkit-scrollbar { width: 6px; }
-#dbm-panel-content::-webkit-scrollbar-track { background: transparent; }
-#dbm-panel-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px;}
-#dbm-panel-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
+/* Стили перенесены выше, чтобы избежать дублирования */
 
-#dbm-panel-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #F3F4F6;
-    background-color: var(--dbm-panel-bg);
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: row-reverse;
-}
+/* Стили футера объединены выше */
 #dbm-create-preset-container {
     padding: 16px 24px;
     border-top: 1px solid #F3F4F6;
@@ -413,47 +805,9 @@ background-size: 200% 200%;
 #dbm-controls-container .dbm-subsection {
     padding: 0 !important;
 }
-/* --- ОБЩИЕ UI-КОМПОНЕНТЫ --- */
-.dbm-btn {
-    padding: 16px 16px;
-    border-radius: var(--dbm-radius-inner);
-    cursor: pointer;
-    text-align: center;
-    font-weight: 500;
-    border: none;
-    transition: var(--dbm-transition);
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    box-sizing: border-box;
-}
-.dbm-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.dbm-btn.dbm-btn-primary {
-    background-color: var(--dbm-primary-color);
-    color: white;
-}
-.dbm-btn.dbm-btn-primary:not(:disabled):hover {
-    background-color: var(--dbm-primary-hover);
-}
-.dbm-btn.dbm-btn-secondary {
-    background-color: var(--dbm-input-bg);
-    color: var(--dbm-text-primary);
-}
-.dbm-btn.dbm-btn-secondary:not(:disabled):hover {
-    background-color: var(--dbm-secondary-hover);
-}
-.dbm-btn.dbm-btn-sm {
-    padding: 10px 16px;
-    font-size: 0.875rem;
-    width: auto;
-}
-.dbm-icon-btn,
+/* --- ДУБЛИРУЮЩИЕСЯ СТИЛИ УДАЛЕНЫ --- */
+/* Все стили кнопок объединены в блоке "UNIFIED BUTTON SYSTEM" выше */
+/* Legacy icon buttons - converted to new system */
 .dbm-delete-target-btn {
     background: none;
     border: none;
@@ -469,7 +823,6 @@ background-size: 200% 200%;
     height: 20px;
     flex-shrink: 0;
 }
-.dbm-icon-btn:hover,
 .dbm-delete-target-btn:hover {
     background-color: var(--dbm-secondary-bg) !important;
     color: var(--dbm-text-primary);
@@ -629,6 +982,9 @@ button#dbm-copy-code-btn {
     background-color: white;;
     border-radius: var(--dbm-radius);
 }
+.dbm-content-and-footer-wrapper:has(#dbm-effects-list > .dbm-no-effects-placeholder) {
+    justify-content: center !important;
+}
 #dbm-back-to-manager-btn {
     /* Свойства в скрытом состоянии */
     opacity: 0;
@@ -667,23 +1023,10 @@ button#dbm-copy-code-btn {
     outline: 1px solid #E6EAED;
 }
 #dbm-create-preset-btn {
-    width: 36px;
-    height: 36px;
     margin-left: -10px !important;
 }
 
-.dbm-icon-btn.dbm-btn-secondary.dbm-btn-sm {
-    border-radius: 12px;
-    background-color: var(--dbm-input-bg);
-    color: var(--dbm-text-primary);
-    width: 36px;
-    height: 36px;
-    box-sizing:border-box;
-}
-.dbm-icon-btn.dbm-btn-secondary.dbm-btn-sm svg{
-    width: 16px;
-    height: 16px;
-}
+/* Стили перенесены в новую единую систему кнопок выше */
 .dbm-no-effects-placeholder .dbm-icon { color: #d1d5db; }
 .dbm-no-effects-placeholder h3 { font-size: 1.25rem; font-weight: 500; color: var(--dbm-text-primary); margin: 0; }
 .dbm-no-effects-placeholder p { font-size: 0.9rem; color: var(--dbm-text-secondary); max-width: 300px; margin: 0; }
@@ -799,9 +1142,9 @@ button#dbm-copy-code-btn {
 
 #dbm-preset-indicator-container { margin-bottom: 0px; }
 #dbm-preset-indicator {
-    background-color: #eef2ff;
-    border: 1px solid #c7d2fe;
-    color: #4338ca;
+    /* background-color: #eef2ff; */
+    border: 1px solid #23272d;
+    color: #23272d;
     padding: 12px;
     border-radius: var(--dbm-radius-inner);
     display: flex;
@@ -863,21 +1206,21 @@ button#dbm-copy-code-btn {
 .dbm-modal-content-wrapper {
     width: 100%;
     height: 100%;
-    padding: 24px;
+    padding: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .dbm-modal-content {
     background: white;
-    padding: 24px;
-    border-radius: var(--dbm-radius);
+    border-radius: var(--dbm-radius-inner);
     box-shadow: var(--dbm-shadow);
     width: 100%;
-    max-width: 500px;
-    max-height: 90%;
+    max-width: 380px;
+    max-height: 80%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 .dbm-modal-content.dbm-modal-props-editor {
     max-width: 95%;
@@ -886,7 +1229,31 @@ button#dbm-copy-code-btn {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    padding: 20px 20px 12px 20px;
+    border-bottom: 1px solid #F3F4F6;
+    flex-shrink: 0;
+}
+
+.dbm-modal-close-btn {
+    font-size: 20px;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 8px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--dbm-transition);
+    color: var(--dbm-text-secondary);
+}
+
+.dbm-modal-close-btn:hover {
+    background-color: var(--dbm-input-bg);
+    color: var(--dbm-text-primary);
 }
 .dbm-modal-content h4 {
     font-size: 20px;
@@ -894,13 +1261,23 @@ button#dbm-copy-code-btn {
     margin: 0;
 }
 .dbm-modal-body {
+    flex: 1;
     overflow-y: auto;
-    /* padding-right: 12px; */
-    /* margin-right: -12px; */
+    padding: 20px;
+    min-height: 0;
 }
 .dbm-modal-body.disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+.dbm-modal-footer {
+    padding: 12px 20px 20px 20px;
+    border-top: 1px solid #F3F4F6;
+    flex-shrink: 0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
 }
 .dbm-modal-body .dbm-form-group input,
 .dbm-modal-body .dbm-form-group select,
@@ -916,14 +1293,23 @@ button#dbm-copy-code-btn {
     flex-direction: column;
     gap: 4px;
     margin-top: 15px;
+    max-height: 300px;
 }
 .dbm-editor-controls {
-    padding: 20px;
-    background-color: #D5DADD;
-    border-radius: 0 0 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    width: 100%;
+    margin-top: 15px;
+}
+.reselect-parent-btn,
+.reselect-target-btn{
+    background-color: transparent !important;
+}
+
+.reselect-parent-btn:hover,
+.reselect-target-btn:hover{
+    background-color: white !important;
 }
 
 .dbm-editor-control-row {
@@ -996,3 +1382,66 @@ button#dbm-copy-code-btn {
 #dbm-custom-bezier-inputs.active {
     display: grid;
 }
+
+/* Translation badges для селекторов */
+/* .dbm-translation-badge,
+.dbm-translation-badge-small {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 6px;
+    display: inline-block;
+    vertical-align: middle;
+} */
+
+.dbm-translation-badge-small {
+    font-size: 10px;
+    padding: 1px 4px;
+    margin-left: 4px;
+}
+
+/* Обновленные стили для selector tags */
+.dbm-selector-tag {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Подсветка элементов при наведении на селекторы */
+.dbm-highlight-element-preview {
+    outline: 2px solid #2196F3 !important;
+    outline-offset: 2px !important;
+    background: rgba(33, 150, 243, 0.1) !important;
+    position: relative !important;
+    z-index: 9998 !important;
+}
+
+/* Интерактивный инспектор (зафиксированный) */
+#dbm-inspector-tooltip.is-interactive {
+    position: fixed !important;
+    z-index: 10001 !important;
+    background: white !important;
+    /* border: 2px solid #4CAF50 !important; */
+    /* box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important; */
+    border-radius: 20px !important;
+    max-width: 400px !important;
+    cursor: default !important;
+}
+.dbm-content-and-footer-wrapper:has(#dbm-effects-list) {
+    justify-content: flex-start !important;
+}
+/* #dbm-inspector-tooltip.is-interactive::before {
+    content: "📌 Панель зафиксирована - выберите нужный элемент";
+    display: block;
+    padding: 8px 12px;
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    font-size: 12px;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+    margin: -8px -12px 8px -12px;
+    border-radius: 6px 6px 0 0;
+} */

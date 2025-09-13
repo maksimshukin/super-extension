@@ -36,8 +36,16 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "core/main.css",
+        "core/main.js",
+        "core/super-panel-manager.js",
+        "core/super-panel-manager.css",
+        "core/super-selection-manager.js",
+        "features/super-grid/super-grid.js",
+        "features/super-grid/super-grid.css",
         "features/super-hover/super-hover.js",
         "features/super-hover/super-hover.css",
+        "features/super-hover/icons.js",
         "features/super-slider/super-slider.js",
         "features/super-slider/super-slider.css",
         "features/tilda-mods/tilda-mods.js",

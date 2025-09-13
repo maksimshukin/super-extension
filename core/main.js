@@ -175,69 +175,107 @@ const dbmSUPER_APP = {
         });
     },
 
+    launchSolution(solutionKey) {
+        const solution = this.solutions[solutionKey];
+        if (!solution) {
+            console.error(`[MAIN] Решение "${solutionKey}" не найдено.`);
+            return;
+        }
 
+        console.log(`[MAIN] Запускаем решение: ${solutionKey}`);
 
+        // Загружаем CSS решения (если еще не загружен)
+        if (solution.css) {
+           this.loadStylesheet(solution.css);
+        }
+        // Загружаем CSS для панели (если еще не загружен)
+       this.loadStylesheet('core/super-panel-manager.css');
 
+        // Загружаем JS решения
+        if (solution.js && solution.initializer) {
+           // Сначала загружаем менеджеры, потом само решение
+           this.loadScript('core/super-panel-manager.js', false, () => {
+               this.loadScript('core/super-selection-manager.js', false, () => {
+                   // После того, как все скрипты гарантированно загружены, вызываем init
+                   this.loadScript(solution.js, true, () => {
+                       console.log(`[MAIN] Все скрипты для ${solutionKey} готовы. Проверяем менеджеры...`);
+                       
+                       // Даем время скриптам на выполнение и отправляем событие инициализации
+                       setTimeout(() => {
+                           console.log(`[MAIN] Отправляем событие для инициализации ${solution.initializer}`);
+                           
+                           // Сохраняем текущее решение в SuperPanelManager
+                           if (window.SuperPanelManager) {
+                               window.SuperPanelManager.setCurrentSolution(solution.initializer);
+                           }
+                           
+                           // Отправляем событие в "мир страницы", чтобы запустить нужный объект
+                           window.dispatchEvent(new CustomEvent('dbmInitSolution', {
+                               detail: {
+                                   name: solution.initializer
+                               }
+                           }));
+                       }, 300); // Увеличиваем задержку для надежности
+                   });
+               });
+           });
+        }
+    },
 
+    loadScript(path, isModule, callback) {
+        const scriptId = `dbm-script-${path.split('/').pop()}`; // e.g., dbm-script-super-panel-manager.js
+        
+        // Проверяем не только наличие скрипта, но и наличие соответствующих объектов
+        if (document.getElementById(scriptId)) {
+            console.log(`[MAIN] Скрипт ${path} уже загружен.`);
+            
+            // Для менеджеров проверяем, что объекты действительно созданы
+            if (path.includes('super-panel-manager.js') && typeof window.SuperPanelManager === 'undefined') {
+                console.log(`[MAIN] Но объект SuperPanelManager не найден, перезагружаем...`);
+                document.getElementById(scriptId).remove();
+            } else if (path.includes('super-selection-manager.js') && typeof window.SuperSelectionManager === 'undefined') {
+                console.log(`[MAIN] Но объект SuperSelectionManager не найден, перезагружаем...`);
+                document.getElementById(scriptId).remove();
+            } else {
+                if (callback) {
+                    callback();
+                }
+                return;
+            }
+        }
 
+        const src = chrome.runtime.getURL(path);
+        console.log(`[MAIN] Загружаем скрипт: ${src}`);
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = src;
+        if (isModule) {
+            script.type = 'module';
+        }
+        script.onload = () => {
+            console.log(`[MAIN] Скрипт ${src} успешно загружен.`);
+            if (callback) {
+                callback();
+            }
+        };
+        script.onerror = () => console.error(`[MAIN] Ошибка загрузки скрипта: ${src}`);
+        document.head.appendChild(script);
+    },
 
-
-
-
-
-
-
-
-
-
-// ✅ ВСТАВЬТЕ ЭТОТ КОД ВМЕСТО ВСЕЙ ВАШЕЙ ФУНКЦИИ launchSolution
-async launchSolution(key) {
-    console.log('[MAIN] launchSolution вызвана для:', key);
-    const solution = this.solutions[key];
-    if (!solution || !solution.js) {
-        console.log('[MAIN] Решение не найдено или в разработке:', key);
-        alert(`${solution.title} находится в разработке!`);
-        return;
-    }
-
-    console.log('[MAIN] Запускаем решение:', solution.title);
-    this.isPanelOpen = true;
-    this.elements.floatingIcon.classList.add('super-hidden');
-
-    // 1. Внедряем CSS, если он есть
-    if (solution.css) {
-        console.log('[MAIN] Загружаем CSS:', solution.css);
+    loadStylesheet(path) {
+        const styleId = `dbm-style-${path.split('/').pop()}`;
+        if (document.getElementById(styleId)) {
+            console.log(`[MAIN] Стили ${path} уже загружены.`);
+            return;
+        }
+        const href = chrome.runtime.getURL(path);
+        console.log(`[MAIN] Загружаем стили: ${href}`);
         const link = document.createElement('link');
+        link.id = styleId;
         link.rel = 'stylesheet';
-        link.href = chrome.runtime.getURL(solution.css);
+        link.href = href;
         document.head.appendChild(link);
     }
-
-    // 2. Внедряем JS и позволяем ему самому себя запустить
-    console.log('[MAIN] Внедряем скрипт:', solution.js);
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL(solution.js);
-    script.type = 'module'; // Это важно для правильного выполнения
-
-    script.onload = () => {
-        // Просто сообщаем, что скрипт успешно загружен.
-        // Никаких вызовов .init() отсюда!
-        console.log(`[MAIN] Скрипт ${solution.js} успешно добавлен на страницу.`);
-    };
-
-    script.onerror = (error) => {
-        console.error('[MAIN] Ошибка загрузки скрипта:', solution.js, error);
-    };
-
-    document.head.appendChild(script);
-}
-
-
-
-
-
-
-
 };
 
 // Безопасная инициализация
