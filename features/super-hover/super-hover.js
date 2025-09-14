@@ -1549,21 +1549,21 @@ activateEditorFor(tabItem) {
 
     const controlsContainer = document.getElementById('dbm-controls-container');
     controlsContainer.innerHTML = this.dbmGetControlsHTML();
-    
+
     document.getElementById('dbm-open-presets-btn').onclick = () => this.showPresetsManagerModal({ context: 'apply' });
     document.getElementById('dbm-ai-helper-btn').onclick = () => this.showAIAssistantModal();
-    
+
     const addHasBtn = document.getElementById('dbm-add-has-btn');
     const effects = this.allEffects[this.activeParentSelector];
     const children = effects?.parent?.children;
-    
+
     if (this.activeKey === 'parent' && children && Object.keys(children).length > 0) {
         addHasBtn.disabled = false;
         addHasBtn.onclick = () => this.startHasEffectWorkflow();
     } else {
         addHasBtn.disabled = true;
     }
-    
+
     document.getElementById('dbm-add-child-btn').onclick = () => {
         const rootParentDomNode = this.getDomNodeForKey('parent');
         if (!rootParentDomNode) {
@@ -1588,8 +1588,8 @@ activateEditorFor(tabItem) {
 
     this.loadStateIntoControls(this.activeKey);
     this.updatePresetIndicatorUI();
-        
-    this.updateDynamicButtons(); // ✅ ИСПРАВЛЕНИЕ: Вызываем новую единую функцию
+
+    this.updateDynamicButtons();
 },
         loadStateIntoControls(key) {
             const state = this.getCurrentStateForKey(key);
@@ -2092,26 +2092,24 @@ showChildTargetModal(parentNode, parentKey, options = {}) {
         this.buildEffectTree(document.querySelector(this.activeParentSelector));
         this.generateAndApplyCSS();
 
-        // ✅ ИСПРАВЛЕНИЕ: Добавляем setTimeout
-        // Это дает браузеру время отрисовать новый элемент в списке перед тем, как мы на него кликнем
         setTimeout(() => {
             if (lastCreatedKey) {
                 try {
                     const newTab = this.els.elementsTabs.querySelector(`[data-key="${lastCreatedKey.replace(/"/g, '\\"')}"]`);
-        if (newTab) {
-            newTab.click();
-        }
+                    if (newTab) {
+                        newTab.click();
+                    }
                 } catch (e) {
                     console.error("Не удалось выбрать созданный слой:", e);
                 }
             }
-        }, 50); // Небольшой задержки достаточно
+        }, 50);
     };
 
     this.showSelectorModal(
-        singleSelection ? 'Выберите новый элемент' : 'Выберите дочерний элемент(ы)', 
-        parentNode, 
-        onConfirm, 
+        singleSelection ? 'Выберите новый элемент' : 'Выберите дочерний элемент(ы)',
+        parentNode,
+        onConfirm,
         { singleSelection, confirmText }
     );
 },

@@ -13,20 +13,23 @@ window.SuperPanelManager = {
     isOpen: false,
     isMinimized: false,
 
-    init() {
-        if (document.getElementById('dbm-editor-panel')) {
-            this.panel = document.getElementById('dbm-editor-panel');
-            this.contentContainer = this.panel.querySelector('#dbm-panel-content');
-            this.headerContainer = this.panel.querySelector('#dbm-panel-header-content'); // Изменено
-            this.overlay = this.panel.querySelector('#dbm-panel-overlay');
-            this.addEventListeners(); // Добавляем обработчики даже для существующей панели
-            return;
-        }
 
-        this.createPanel();
+init() {
+    if (document.getElementById('dbm-editor-panel')) {
+        this.panel = document.getElementById('dbm-editor-panel');
+        this.contentContainer = this.panel.querySelector('#dbm-panel-content');
+        this.headerContainer = this.panel.querySelector('#dbm-panel-header-content');
+        // FIX: Добавляем кеширование футера и оверлея при повторной инициализации
+        this.footerContainer = this.panel.querySelector('#dbm-panel-footer');
+        this.overlay = this.panel.querySelector('#dbm-panel-overlay');
         this.addEventListeners();
-        console.log('[SuperPanelManager] Панель инициализирована');
-    },
+        return;
+    }
+
+    this.createPanel();
+    this.addEventListeners();
+    console.log('[SuperPanelManager] Панель инициализирована');
+},
 
     createPanel() {
         const panelHTML = `
@@ -99,7 +102,11 @@ window.SuperPanelManager = {
         minimizeButton.addEventListener('click', () => this.minimize());
         backButton.addEventListener('click', () => this.goBack());
 
-        this.overlay.addEventListener('click', () => this.hideModal());
+        this.overlay.addEventListener('click', (e) => {
+            if (e.target === this.overlay) {
+                this.hideModal();
+            }
+        });
     },
 
     open() {

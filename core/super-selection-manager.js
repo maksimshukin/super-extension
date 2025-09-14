@@ -382,10 +382,12 @@ window.SuperSelectionManager = {
             }
             
             // Анализируем классы элемента
-            const classNames = element.className || '';
-            for (const [key, value] of Object.entries(this.TRANSLATION_MAP)) {
-                if (classNames.includes(key)) {
-                    return value;
+            const classNames = element.className;
+            if (typeof classNames === 'string' && classNames) {
+                for (const [key, value] of Object.entries(this.TRANSLATION_MAP)) {
+                    if (classNames.includes(key)) {
+                        return value;
+                    }
                 }
             }
             
