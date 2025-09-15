@@ -187,6 +187,71 @@
             color: var(--dbm-primary-color); text-decoration: none;
         }
         .checkbox-group a:hover { text-decoration: underline; }
+        /* --- Стили для экрана управления подпиской --- */
+        .plans-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .plans-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            color: var(--dbm-text-secondary);
+        }
+        .back-btn:hover {
+            color: var(--dbm-text-primary);
+        }
+
+        .plans-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .plan-card {
+            border: 1px solid #e5e7eb;
+            border-radius: var(--dbm-radius-inner);
+            padding: 16px;
+            cursor: pointer;
+            transition: var(--dbm-transition);
+            text-align: left;
+        }
+        .plan-card:hover {
+            border-color: var(--dbm-primary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .plan-card.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .plan-card h4 { margin: 0 0 4px 0; }
+        .plan-card .price { font-size: 18px; font-weight: 700; }
+        .plan-card small { color: var(--dbm-text-secondary); }
+        
+        .promocode-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .skeleton-loader {
+            height: 80px;
+            background-color: #f3f4f6;
+            border-radius: 12px;
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -207,9 +272,6 @@
 
             <div id="login-form">
                 <div id="login-error" class="error-display hidden"></div>
-                <div class="demo-info" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0369a1;">
-                    <strong>Демо-режим:</strong> Используйте demo@example.com / demo123
-                </div>
                 <div class="dbm-form-group">
                     <label for="login-email">Email</label>
                     <input type="email" id="login-email">
@@ -270,11 +332,29 @@
                 <button id="logout-btn" class="dbm-btn dbm-btn-secondary">Выйти</button>
             </div>
         </div>
+        <div id="plans-view" class="hidden">
+            <div class="plans-header">
+                <button id="back-to-user-view-btn" class="back-btn">&larr;</button>
+                <h3>Управление подпиской</h3>
+            </div>
+            <div id="plans-container" class="plans-list">
+                <div class="skeleton-loader"></div>
+                <div class="skeleton-loader"></div>
+            </div>
+            <div class="promocode-section">
+                <div class="dbm-form-group">
+                    <label for="promocode-input">Промокод</label>
+                    <input type="text" id="promocode-input" placeholder="SALE2024">
+                </div>
+            </div>
+            <p id="plans-error" class="error-display hidden"></p>
+        </div>
     </div>
 
     <!-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ДОБАВЛЯЕМ ПОДКЛЮЧЕНИЕ СКРИПТОВ -->
-    <script src="../supabase.js"></script>
-    <script src="config.js"></script>
+    <script src="../lib/supabase.min.js"></script>
+    <script src="config.js"></script>         
+    <script src="../supabase.js"></script>    
     <script src="popup.js"></script>
 
 </body>

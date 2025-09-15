@@ -1,426 +1,260 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Функция для инициализации popup
-    async function initPopup() {
-        try {
-        // --- НАСТРОЙКА ---
-        // Используем ключи из файла config.js
-        if (!window.dbmSUPER_SUPABASE_CONFIG) {
-            throw new Error('dbmSUPER_SUPABASE_CONFIG is not defined. Ensure config.js is loaded before popup.js');
-        }
-        const SUPABASE_URL = window.dbmSUPER_SUPABASE_CONFIG.url;
-        const SUPABASE_ANON_KEY = window.dbmSUPER_SUPABASE_CONFIG.anonKey;
-        
-        console.log('[POPUP] Supabase config:', { url: SUPABASE_URL, keyLength: SUPABASE_ANON_KEY.length });
-        
-        // Проверка, загрузился ли локальный Supabase клиент
-        if (typeof window.supabaseClient === 'undefined' || window.supabaseClient === null) {
-            throw new Error("Критическая ошибка: Локальный Supabase клиент не загружен. Проверьте файл supabase.js.");
-        }
-        
-        const supabaseClient = window.supabaseClient;
-        console.log('[POPUP] Локальный Supabase client используется:', supabaseClient);
-        
-        // Тестируем подключение к Supabase
-        try {
-            const { data, error } = await supabaseClient.auth.getSession();
-            console.log('[POPUP] Supabase connection test:', { data, error });
-        } catch (err) {
-            console.error('[POPUP] Supabase connection error:', err);
-        }
-
-        // --- ФУНКЦИЯ ДЛЯ НАДЕЖНОГО ПОЛУЧЕНИЯ ЭЛЕМЕНТОВ ---
-        const getEl = (id) => {
-            const el = document.getElementById(id);
-            if (!el) {
-                // Если элемент не найден, это критическая ошибка, останавливаем скрипт
-                throw new Error(`Ошибка: Элемент с id="${id}" не найден в popup.html. Проверьте верстку.`);
-            }
-            return el;
-        };
-        
-        // --- ПОЛУЧЕНИЕ ВСЕХ ЭЛЕМЕНТОВ UI ---
-        const authContainer = getEl('auth-container');
-        const appView = getEl('app-view');
-        const versionDisplay = getEl('version-display');
-        const closeBtn = getEl('close-btn');
-        const loginForm = getEl('login-form');
-        const registerForm = getEl('register-form');
-        const loginEmailInput = getEl('login-email');
-        const loginPasswordInput = getEl('login-password');
-        const loginBtn = getEl('login-btn');
-        const loginErrorDiv = getEl('login-error');
-        const registerNameInput = getEl('register-name');
-        const registerEmailInput = getEl('register-email');
-        const registerPasswordInput = getEl('register-password');
-        const tosCheck = getEl('tos-check');
-        const privacyCheck = getEl('privacy-check');
-        const registerBtn = getEl('register-btn');
-        const registerErrorDiv = getEl('register-error');
-        const strengthBar = getEl('strength-bar');
-        const userNameEl = getEl('user-name');
-        const userEmailEl = getEl('user-email');
-        const planNameEl = getEl('plan-name');
-        const expiryDateEl = getEl('expiry-date');
-        const logoutBtn = getEl('logout-btn');
-        const tabButtons = document.querySelectorAll('.tab-btn');
-
-        // --- ОБЩАЯ ЛОГИКА ---
-        versionDisplay.textContent = 'v' + chrome.runtime.getManifest().version;
-        console.log('[POPUP] Version set:', versionDisplay.textContent);
-        closeBtn.addEventListener('click', () => window.close());
-
-        // --- ЛОГИКА ТАБОВ ---
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                const targetTabId = button.dataset.tab;
-                loginForm.classList.toggle('hidden', targetTabId !== 'login-form');
-                registerForm.classList.toggle('hidden', targetTabId !== 'register-form');
-            });
-        });
-
-        // --- ЛОГИКА ПОКАЗА/СКРЫТИЯ ПАРОЛЯ ---
-        document.querySelectorAll('.toggle-password').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                const targetInput = getEl(toggle.dataset.target);
-                if (targetInput.type === 'password') {
-                    targetInput.type = 'text';
-                    toggle.classList.add('showing');
-                } else {
-                    targetInput.type = 'password';
-                    toggle.classList.remove('showing');
-                }
-            });
-        });
-
-        // --- ЛОГИКА ВАЛИДАЦИИ ФОРМ ---
-        const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        const checkPasswordStrength = (password) => {
-            let score = 0;
-            if (password.length >= 8) score++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-            if (/[0-9]/.test(password)) score++;
-            if (/[^a-zA-Z0-9]/.test(password)) score++;
-            
-            strengthBar.className = 'strength-bar';
-            if (password.length > 0) {
-                if (score <= 1) { strengthBar.classList.add('strength-weak'); }
-                else if (score === 2) { strengthBar.classList.add('strength-fair'); }
-                else if (score === 3) { strengthBar.classList.add('strength-good'); }
-                else if (score >= 4) { strengthBar.classList.add('strength-strong'); }
-            }
-            return score;
-        };
-
-        function validateForms() {
-            const isLoginEmailValid = validateEmail(loginEmailInput.value);
-            const isLoginPasswordValid = loginPasswordInput.value.length >= 6;
-            loginBtn.disabled = !(isLoginEmailValid && isLoginPasswordValid);
-
-            const isRegisterNameValid = registerNameInput.value.length >= 2;
-            const isRegisterEmailValid = validateEmail(registerEmailInput.value);
-            const passwordStrength = checkPasswordStrength(registerPasswordInput.value);
-            const isRegisterPasswordStrong = passwordStrength >= 2;
-            const areCheckboxesChecked = tosCheck.checked && privacyCheck.checked;
-            
-            const isRegisterFormValid = isRegisterNameValid && isRegisterEmailValid && isRegisterPasswordStrong && areCheckboxesChecked;
-            registerBtn.disabled = !isRegisterFormValid;
-            
-            console.log('[POPUP] Form validation:', {
-                name: { valid: isRegisterNameValid, length: registerNameInput.value.length },
-                email: { valid: isRegisterEmailValid, value: registerEmailInput.value },
-                password: { strength: passwordStrength, strong: isRegisterPasswordStrong },
-                checkboxes: { checked: areCheckboxesChecked, tos: tosCheck.checked, privacy: privacyCheck.checked },
-                formValid: isRegisterFormValid,
-                buttonDisabled: registerBtn.disabled
-            });
-        }
-        
-        [loginEmailInput, loginPasswordInput, registerNameInput, registerEmailInput, registerPasswordInput, tosCheck, privacyCheck]
-            .forEach(input => input.addEventListener('input', validateForms));
-        console.log('[POPUP] Form listeners attached.');
-
-        // --- ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ ---
-        const showError = (div, message) => {
-            div.textContent = message;
-            div.classList.remove('hidden');
-        };
-        const hideError = (div) => {
-            div.textContent = '';
-            div.classList.add('hidden');
-        };
-
-        async function checkUserStatus() {
-            console.log('[POPUP] Проверка статуса пользователя...');
-            try {
-                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-                console.log('[POPUP] Сессия:', session);
-                if (sessionError) {
-                    console.error('[POPUP] Ошибка получения сессии:', sessionError);
-                    return;
-                }
-            if (session) {
-                console.log('[POPUP] Session found. Rendering app view');
-                authContainer.classList.add('hidden');
-                appView.classList.remove('hidden');
-                const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('*, plans (name)').eq('id', session.user.id).single();
-                if (profileError) console.error('[POPUP] profile load error:', profileError);
-                if (profile) {
-                    userNameEl.textContent = profile.full_name || 'Пользователь';
-                    userEmailEl.textContent = profile.email;
-                    if (profile.plan_id && profile.plans) {
-                        planNameEl.textContent = profile.plans.name;
-                        if (profile.subscription_end_date) {
-                            const endDate = new Date(profile.subscription_end_date);
-                            expiryDateEl.textContent = `Доступ активен до: ${endDate.toLocaleDateString()}`;
-                        } else {
-                            expiryDateEl.textContent = 'Бессрочный доступ';
-                        }
-                    } else {
-                        planNameEl.textContent = 'Бесплатный';
-                        expiryDateEl.textContent = '';
-                    }
-                }
-            } else {
-                authContainer.classList.remove('hidden');
-                appView.classList.add('hidden');
-                validateForms();
-            }
-            } catch (error) {
-                console.error('[POPUP] Ошибка в checkUserStatus:', error);
-                authContainer.classList.remove('hidden');
-                appView.classList.add('hidden');
-            }
-        }
-
-        // --- ОБРАБОТЧИКИ КНОПОК ---
-        console.log('[POPUP] Setting up register button listener');
-        console.log('[POPUP] Register button element:', registerBtn);
-        
-        registerBtn.addEventListener('click', async () => {
-            console.log('[POPUP] Register button clicked');
-            console.log('[POPUP] Register data:', {
-                email: registerEmailInput.value,
-                name: registerNameInput.value,
-                passwordLength: registerPasswordInput.value.length
-            });
-            
-            hideError(registerErrorDiv);
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: registerEmailInput.value,
-                    password: registerPasswordInput.value,
-                    options: { 
-                        data: { 
-                            full_name: registerNameInput.value 
-                        } 
-                    }
-                });
-
-                console.log('[POPUP] SignUp response:', { data, error });
-
-                if (error) {
-                    console.error('[POPUP] signUp error:', error);
-                    let errorMessage = 'Ошибка регистрации.';
-                    
-                    if (error.message.includes('already registered')) {
-                        errorMessage = 'Пользователь с таким email уже существует.';
-                    } else if (error.message.includes('Invalid email')) {
-                        errorMessage = 'Неверный формат email.';
-                    } else if (error.message.includes('Password')) {
-                        errorMessage = 'Пароль слишком слабый.';
-                    } else {
-                        errorMessage = `Ошибка: ${error.message}`;
-                    }
-                    
-                    showError(registerErrorDiv, errorMessage);
-                } else if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    console.log('[POPUP] User already exists (no identities)');
-                    showError(registerErrorDiv, 'Пользователь с таким email уже существует.');
-                } else {
-                    console.log('[POPUP] Registration successful');
-                    if (data.session === null) {
-                        alert('Регистрация успешна! Пожалуйста, проверьте вашу почту и нажмите на ссылку для подтверждения аккаунта.');
-                    } else {
-                        alert('Регистрация успешна! Теперь вы можете войти.');
-                    }
-                }
-            } catch (err) {
-                console.error('[POPUP] Unexpected error during registration:', err);
-                showError(registerErrorDiv, 'Произошла неожиданная ошибка. Попробуйте еще раз.');
-            }
-        });
-
-        loginBtn.addEventListener('click', async () => {
-            console.log('[POPUP] Login button clicked');
-            console.log('[POPUP] Email:', loginEmailInput.value);
-            console.log('[POPUP] Password length:', loginPasswordInput.value.length);
-            console.log('[POPUP] supabaseClient:', supabaseClient);
-            console.log('[POPUP] supabaseClient.auth:', supabaseClient?.auth);
-            
-            hideError(loginErrorDiv);
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: loginEmailInput.value,
-                    password: loginPasswordInput.value,
-                });
-
-                console.log('[POPUP] signInWithPassword response:', { data, error });
-
-                if (error) {
-                    console.error('[POPUP] signInWithPassword error:', error);
-                    console.error('[POPUP] Error details:', {
-                        message: error.message,
-                        email: loginEmailInput.value,
-                        passwordLength: loginPasswordInput.value.length
-                    });
-                    
-                    // Показываем более информативное сообщение об ошибке
-                    if (error.message.includes('Email not confirmed')) {
-                        showError(loginErrorDiv, 'Ваш аккаунт не подтвержден. Пожалуйста, проверьте почту.');
-                    } else if (error.message.includes('Неверные учетные данные')) {
-                        showError(loginErrorDiv, 'Неверный email или пароль. Для демо используйте: demo@example.com / demo123');
-                    } else {
-                        showError(loginErrorDiv, `Ошибка входа: ${error.message}`);
-                    }
-                } else {
-                    chrome.runtime.sendMessage({ type: 'USER_LOGGED_IN' });
-                    chrome.storage.local.set({ userStatus: 'loggedIn' })
-                    console.log('[POPUP] USER_LOGGED_IN sent to background');
-                    checkUserStatus();
-                }
-            } catch (err) {
-                console.error('[POPUP] Unexpected error during login:', err);
-                showError(loginErrorDiv, 'Произошла неожиданная ошибка. Попробуйте еще раз.');
-            }
-        });
-
-        logoutBtn.addEventListener('click', async () => {
-            console.log('[POPUP] Logout button clicked');
-            await supabaseClient.auth.signOut();
-            chrome.runtime.sendMessage({ type: 'USER_LOGGED_OUT' });
-            chrome.storage.local.set({ userStatus: 'loggedOut' });
-            console.log('[POPUP] USER_LOGGED_OUT sent to background');
-            window.location.reload();
-        });
-
-        // ПЕРВОНАЧАЛЬНЫЙ ЗАПУСК
-        console.log('[POPUP] Initial checkUserStatus call');
-        checkUserStatus();
-        
-        // Добавляем кнопки для тестирования
-        const manageBtn = getEl('manage-btn');
-        const supportBtn = getEl('support-btn');
-        
-        manageBtn.addEventListener('click', () => {
-            console.log('[POPUP] Manage subscription clicked');
-            alert('Функция управления подпиской будет добавлена позже');
-        });
-        
-        supportBtn.addEventListener('click', () => {
-            console.log('[POPUP] Support clicked');
-            alert('Для поддержки напишите на support@example.com');
-        });
-
-        } catch (error) {
-            console.error('[POPUP] UNHANDLED ERROR:', error);
-            document.body.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">${error.message}</div>`;
-        }
+    // Ждем, пока config.js и supabase.js точно загрузятся
+    // Эта простая проверка решает большинство проблем с порядком загрузки
+    if (!window.supabaseClient) {
+        document.body.innerHTML = `<div style="padding: 20px; color: red;">Ошибка: Клиент Supabase не был загружен. Проверьте консоль.</div>`;
+        return;
     }
 
-    // Ждем загрузки Supabase и инициализируем popup
-    let supabaseWaitAttempts = 0;
-    const maxSupabaseWaitAttempts = 50; // 5 секунд максимум
+    const supabase = window.supabaseClient;
+
+    // --- ФУНКЦИЯ ДЛЯ НАДЕЖНОГО ПОЛУЧЕНИЯ ЭЛЕМЕНТОВ ---
+    const getEl = (id) => {
+        const el = document.getElementById(id);
+        if (!el) throw new Error(`Ошибка: Элемент с id="${id}" не найден.`);
+        return el;
+    };
     
-    async function waitForSupabase() {
-        supabaseWaitAttempts++;
-        
-        console.log(`[POPUP] Попытка ${supabaseWaitAttempts}/${maxSupabaseWaitAttempts} загрузки Supabase...`);
-        console.log('[POPUP] dbmSUPER_SUPABASE_CONFIG:', !!window.dbmSUPER_SUPABASE_CONFIG);
-        console.log('[POPUP] window.supabaseClient:', !!window.supabaseClient);
-        
-        if (window.dbmSUPER_SUPABASE_CONFIG && window.supabaseClient) {
-            console.log('[POPUP] Supabase загружен, инициализируем popup...');
-            await initPopup();
-        } else if (supabaseWaitAttempts >= maxSupabaseWaitAttempts) {
-            console.warn('[POPUP] Таймаут ожидания Supabase, инициализируем popup без Supabase...');
-            // Инициализируем popup даже без Supabase для базовой функциональности
-            await initPopupWithoutSupabase();
-        } else {
-            setTimeout(waitForSupabase, 100);
-        }
-    }
+    // --- ПОЛУЧЕНИЕ ВСЕХ ЭЛЕМЕНТОВ UI ---
+    const authContainer = getEl('auth-container');
+    const appView = getEl('app-view');
+    const plansView = getEl('plans-view'); // Новый экран подписок
+    const loginBtn = getEl('login-btn');
+    const registerBtn = getEl('register-btn');
+    const logoutBtn = getEl('logout-btn');
+    const manageBtn = getEl('manage-btn');
+    const backToUserViewBtn = getEl('back-to-user-view-btn'); // Кнопка возврата
+    const plansContainer = getEl('plans-container'); // Контейнер тарифов
+    const promocodeInput = getEl('promocode-input'); // Поле промокода
+    const plansErrorEl = getEl('plans-error'); // Элемент ошибки для тарифов
+    const loginEmailInput = getEl('login-email');
+    const loginPasswordInput = getEl('login-password');
+    const registerNameInput = getEl('register-name');
+    const registerEmailInput = getEl('register-email');
+    const registerPasswordInput = getEl('register-password');
+    const tosCheck = getEl('tos-check');
+    const privacyCheck = getEl('privacy-check');
+    const strengthBar = getEl('strength-bar');
+    const loginErrorDiv = getEl('login-error');
+    const registerErrorDiv = getEl('register-error');
 
-    // Функция инициализации popup без Supabase (для базовой функциональности)
-    async function initPopupWithoutSupabase() {
+    // --- УПРАВЛЕНИЕ ОТОБРАЖЕНИЕМ И ДАННЫМИ ---
+    const switchView = (viewToShow) => {
+        [authContainer, appView, plansView].forEach(view => view.classList.add('hidden'));
+        viewToShow.classList.remove('hidden');
+    };
+
+    const showError = (div, message) => {
+        div.textContent = message;
+        div.classList.remove('hidden');
+    };
+
+    const hideError = (div) => {
+        div.textContent = '';
+        div.classList.add('hidden');
+    };
+
+    // --- ЛОГИКА ПОДПИСКИ ---
+    const checkUserStatus = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { status: 'logged_out' };
+
+        const { data, error } = await supabase
+            .from('subscriptions_view')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+        
+        const result = { email: user.email, ...data };
+        if (error || !data) return { status: 'free', ...result };
+        
+        const endsAt = data['Активна до'] ? new Date(data['Активна до']) : null;
+        const now = new Date();
+        
+        if (data['Статус'] === 'active' && endsAt > now) {
+            return { status: 'active', ...result };
+        }
+        return { status: 'past_due', ...result };
+    };
+
+    const updateUserUI = async () => {
+        const sub = await checkUserStatus();
+        if (sub.status === 'logged_out') {
+            switchView(authContainer);
+            validateForms();
+            return;
+        }
+
+        getEl('user-name').textContent = sub['Имя и Фамилия'] || 'Пользователь';
+        getEl('user-email').textContent = sub.email;
+
+        switch(sub.status) {
+            case 'active':
+                getEl('plan-name').textContent = sub['Тариф'];
+                getEl('expiry-date').textContent = `Доступ до: ${new Date(sub['Активна до']).toLocaleDateString()}`;
+                break;
+            case 'past_due':
+                getEl('plan-name').textContent = `Истекла (${sub['Тариф'] || 'неизвестный'})`;
+                getEl('expiry-date').textContent = 'Пожалуйста, продлите подписку';
+                break;
+            default: // free, trialing, etc.
+                getEl('plan-name').textContent = 'Бесплатный (триал)';
+                getEl('expiry-date').textContent = 'Ограниченный доступ';
+                break;
+        }
+        switchView(appView);
+    };
+    
+    // --- ФУНКЦИИ ДЛЯ РАБОТЫ С ТАРИФАМИ ---
+    const showPlansView = async () => {
+        switchView(plansView);
+        plansErrorEl.classList.add('hidden');
+        plansContainer.innerHTML = '<div class="skeleton-loader"></div><div class="skeleton-loader"></div>';
+
+        const { data: plans, error } = await supabase
+            .from('plans')
+            .select('*')
+            .neq('duration_months', 0)
+            .order('duration_months', { ascending: true });
+
+        if (error) {
+            plansContainer.innerHTML = '<p>Не удалось загрузить тарифы.</p>';
+            return;
+        }
+    
+        plansContainer.innerHTML = plans.map(plan => `
+            <div class="plan-card" data-plan-id="${plan.id}">
+                <div class="plan-card-info">
+                    <h4>${plan.name}</h4>
+                    <small>${plan.price_per_month} ₽/мес.</small>
+                </div>
+                <div class="price">${plan.price_per_month * plan.duration_months} ₽</div>
+            </div>
+        `).join('');
+    
+        plansContainer.querySelectorAll('.plan-card').forEach(card => {
+            card.addEventListener('click', handlePayment);
+        });
+    };
+
+    const handlePayment = async (event) => {
+        const planCard = event.currentTarget;
+        const planId = planCard.dataset.planId;
+        const promoCode = promocodeInput.value.trim();
+        
+        planCard.classList.add('loading');
+        plansErrorEl.classList.add('hidden');
+
         try {
-            console.log('[POPUP] Инициализация popup без Supabase...');
-            
-            // Получаем элементы
-            const versionDisplay = document.getElementById('version-display');
-            const closeBtn = document.getElementById('close-btn');
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            
-            if (versionDisplay) {
-                versionDisplay.textContent = 'v' + chrome.runtime.getManifest().version;
+            const { data, error } = await supabase.functions.invoke('create-payment', {
+                body: { plan_id: planId, promocode: promoCode || null },
+            });
+
+            if (error) throw new Error(error.message);
+
+            if (data.confirmation_url) {
+                chrome.tabs.create({ url: data.confirmation_url });
+                window.close();
+            } else {
+                throw new Error('Не удалось получить ссылку на оплату.');
             }
-            
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => window.close());
-            }
-            
-            // Логика вкладок
-            if (tabButtons.length > 0) {
-                tabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        // Убираем active со всех кнопок
-                        tabButtons.forEach(btn => btn.classList.remove('active'));
-                        // Добавляем active на нажатую кнопку
-                        button.classList.add('active');
-                        
-                        const targetTabId = button.dataset.tab;
-                        if (loginForm) loginForm.classList.toggle('hidden', targetTabId !== 'login-form');
-                        if (registerForm) registerForm.classList.toggle('hidden', targetTabId !== 'register-form');
-                        
-                        console.log('[POPUP] Переключена вкладка:', targetTabId);
-                    });
-                });
-                console.log('[POPUP] Обработчики вкладок установлены');
-            }
-            
-            // Показываем сообщение об ошибке Supabase
-            const authContainer = document.getElementById('auth-container');
-            if (authContainer) {
-                authContainer.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #666;">
-                        <h3>⚠️ Ошибка подключения</h3>
-                        <p>Не удалось подключиться к серверу аутентификации.</p>
-                        <p>Попробуйте перезагрузить расширение.</p>
-                        <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
-                            <strong>Диагностика:</strong><br>
-                            dbmSUPER_SUPABASE_CONFIG: ${window.dbmSUPER_SUPABASE_CONFIG ? '✅' : '❌'}<br>
-                            window.supabaseClient: ${window.supabaseClient ? '✅' : '❌'}<br>
-                            Попыток загрузки: ${supabaseWaitAttempts}
-                        </div>
-                        <button onclick="window.close()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            Закрыть
-                        </button>
-                    </div>
-                `;
-            }
-            
-        } catch (error) {
-            console.error('[POPUP] Ошибка инициализации без Supabase:', error);
+        } catch (err) {
+            plansErrorEl.textContent = `Ошибка: ${err.message}`;
+            plansErrorEl.classList.remove('hidden');
+        } finally {
+            planCard.classList.remove('loading');
         }
+    };
+
+    // --- ВАША ЛОГИКА ВАЛИДАЦИИ И ИНТЕРФЕЙСА (полностью сохранена) ---
+    getEl('version-display').textContent = 'v' + chrome.runtime.getManifest().version;
+    getEl('close-btn').addEventListener('click', () => window.close());
+    
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const targetTabId = button.dataset.tab;
+            getEl('login-form').classList.toggle('hidden', targetTabId !== 'login-form');
+            getEl('register-form').classList.toggle('hidden', targetTabId !== 'register-form');
+        });
+    });
+
+    document.querySelectorAll('.toggle-password').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const targetInput = getEl(toggle.dataset.target);
+            targetInput.type = targetInput.type === 'password' ? 'text' : 'password';
+            toggle.classList.toggle('showing');
+        });
+    });
+
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const checkPasswordStrength = (password) => {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^a-zA-Z0-9]/.test(password)) score++;
+        strengthBar.className = 'strength-bar';
+        if (password.length > 0) {
+            if (score <= 1) strengthBar.classList.add('strength-weak');
+            else if (score === 2) strengthBar.classList.add('strength-fair');
+            else if (score === 3) strengthBar.classList.add('strength-good');
+            else if (score >= 4) strengthBar.classList.add('strength-strong');
+        }
+        return score;
+    };
+
+    function validateForms() {
+        loginBtn.disabled = !(validateEmail(loginEmailInput.value) && loginPasswordInput.value.length >= 6);
+        registerBtn.disabled = !(
+            registerNameInput.value.length >= 2 &&
+            validateEmail(registerEmailInput.value) &&
+            checkPasswordStrength(registerPasswordInput.value) >= 2 &&
+            tosCheck.checked &&
+            privacyCheck.checked
+        );
     }
+    [loginEmailInput, loginPasswordInput, registerNameInput, registerEmailInput, registerPasswordInput, tosCheck, privacyCheck]
+        .forEach(input => input.addEventListener('input', validateForms));
 
-    // Запускаем ожидание Supabase
-    waitForSupabase();
+    // --- ОБРАБОТЧИКИ СОБЫТИЙ АВТОРИЗАЦИИ ---
+    registerBtn.addEventListener('click', async () => {
+        hideError(registerErrorDiv);
+        const { data, error } = await supabase.auth.signUp({
+            email: registerEmailInput.value,
+            password: registerPasswordInput.value,
+            options: { data: { full_name: registerNameInput.value } }
+        });
+        if (error) {
+            showError(registerErrorDiv, error.message);
+        } else {
+            alert('Регистрация успешна! Проверьте почту для подтверждения аккаунта.');
+        }
+    });
+
+    loginBtn.addEventListener('click', async () => {
+        hideError(loginErrorDiv);
+        const { error } = await supabase.auth.signInWithPassword({
+            email: loginEmailInput.value,
+            password: loginPasswordInput.value,
+        });
+        if (error) {
+            showError(loginErrorDiv, 'Неверный email или пароль.');
+        } else {
+            updateUserUI(); // Обновляем UI после входа
+        }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        updateUserUI(); // Обновляем UI после выхода
+    });
+    
+    // --- ОБРАБОТЧИКИ СОБЫТИЙ ДЛЯ ПОДПИСКИ ---
+    manageBtn.addEventListener('click', showPlansView);
+    backToUserViewBtn.addEventListener('click', () => switchView(appView));
+
+    // --- ПЕРВЫЙ ЗАПУСК ---
+    updateUserUI();
 });
-

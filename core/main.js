@@ -1,103 +1,94 @@
-// core/main.js
+
 console.log('[MAIN] SUPER расширение загружается...');
-console.log('[MAIN] URL:', window.location.href);
-console.log('[MAIN] Chrome доступен:', !!window.chrome);
-console.log('[MAIN] Chrome storage доступен:', !!window.chrome?.storage);
 
 const dbmSUPER_APP = {
     isPanelOpen: false,
     elements: {},
+    userSubscription: { status: 'free' }, // Статус по умолчанию
 
-    // Каталог всех ваших решений. Легко добавить новое!
+    // Каталог решений с метками доступа (isPaid)
     solutions: {
         'super-hover': {
             title: 'Super Hover',
             description: 'Создание продвинутых hover-эффектов',
             js: 'features/super-hover/super-hover.js',
             css: 'features/super-hover/super-hover.css',
-            // Имя объекта, у которого нужно вызвать метод .init() после загрузки скрипта
-            initializer: 'dbmHoverArchitect'
+            initializer: 'dbmHoverArchitect',
+            isPaid: true // Платное решение
         },
         'super-grid': {
             title: 'Super Grid',
             description: 'Продвинутая сеточная система (в разработке)',
+            isPaid: true
         },
         'super-slider': {
             title: 'Super Slider',
-            description: 'Мощный конструктор слайдеров (в разработке)',
+            description: 'Мощный конструктор слайдеров',
             js: 'features/super-slider/super-slider.js',
             css: 'features/super-slider/super-slider.css',
-            // Имя объекта, у которого нужно вызвать метод .init() после загрузки скрипта
-            initializer: 'dbmSwiperArchitect'
+            initializer: 'dbmSwiperArchitect',
+            isPaid: true // Платное решение
         },
         'tilda-mods': {
             title: 'Tilda Mods',
             description: 'Запустить классические моды для Tilda',
             js: 'features/tilda-mods/tilda-mods.js',
-            css: 'features/tilda-mods/tilda-mods.css',
-            // У старого кода нет объекта, он выполняется сразу
-            initializer: null
+            initializer: null,
+            isPaid: false // Бесплатное решение
         }
     },
 
-    init() {
+    async init() {
         console.log('[MAIN] dbmSUPER_APP инициализируется...');
-        console.log('[MAIN] Проверяем доступность chrome.storage:', !!chrome?.storage);
         
-        // Ждем, пока пользователь войдет в систему
-        try {
-            if (chrome?.storage?.local) {
-                chrome.storage.local.get('userStatus', (data) => {
-                    console.log('[MAIN] Проверка статуса пользователя:', data);
-                    if (data.userStatus === 'loggedIn') {
-                        console.log('[MAIN] Пользователь вошел в систему, создаем UI...');
-                        this.buildUI();
-                    } else {
-                        console.log('[MAIN] Пользователь не вошел в систему, UI не создается');
-                        console.log('[MAIN] Для тестирования можно установить статус: chrome.storage.local.set({userStatus: "loggedIn"})');
-                    }
-                });
-            } else {
-                console.error('[MAIN] chrome.storage недоступен!');
-            }
-        } catch (error) {
-            console.error('[MAIN] Ошибка при работе с chrome.storage:', error);
+        // Загружаем клиент Supabase, если его еще нет
+        if (!window.supabaseClient) {
+            await this.loadScript('../supabase.js', false);
         }
 
-        // Слушаем сообщения от других частей расширения
-        if (chrome?.runtime?.onMessage) {
-            chrome.runtime.onMessage.addListener((message) => {
-                console.log('[MAIN] Получено сообщение:', message);
-                if (message.type === 'USER_LOGGED_IN') {
-                    console.log('[MAIN] Получен сигнал входа, создаем UI...');
-                    this.buildUI();
-                }
-                if (message.type === 'USER_LOGGED_OUT') {
-                    console.log('[MAIN] Получен сигнал выхода, уничтожаем UI...');
-                    this.destroyUI();
-                }
-            });
+        // Проверяем статус пользователя и его подписку
+        this.userSubscription = await this.checkAuthAndSubscription();
+
+        // **ГЛАВНАЯ ЛОГИКА**: Показываем UI только если пользователь авторизован
+        if (this.userSubscription.status !== 'logged_out' && this.userSubscription.status !== 'error') {
+            console.log(`[MAIN] Пользователь авторизован. Статус подписки: ${this.userSubscription.status}`);
+            this.buildUI();
         } else {
-            console.error('[MAIN] chrome.runtime недоступен!');
+            console.log('[MAIN] Пользователь не авторизован, UI не будет создан.');
+        }
+    },
+
+    async checkAuthAndSubscription() {
+        try {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) return { status: 'logged_out' };
+
+            const { data, error } = await window.supabaseClient
+                .from('subscriptions_view')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+            
+            if (error || !data) return { status: 'free' };
+            
+            const endsAt = data['Активна до'] ? new Date(data['Активна до']) : null;
+            if (data['Статус'] === 'active' && endsAt > new Date()) {
+                return { status: 'active' };
+            }
+
+            return { status: 'free' }; // Если подписка истекла или неактивна
+        } catch (e) {
+            console.error('[MAIN] Ошибка проверки статуса:', e);
+            return { status: 'error' };
         }
     },
 
     buildUI() {
-        console.log('[MAIN] buildUI() вызвана');
-        if (this.elements.floatingIcon) {
-            console.log('[MAIN] UI уже создан, пропускаем');
-            return; // UI уже создан
-        }
-
-        console.log('[MAIN] Создаем плавающую иконку...');
+        if (this.elements.floatingIcon) return; // UI уже создан
         this.createFloatingIcon();
-        console.log('[MAIN] Создаем окно решений...');
         this.createSolutionsWindow();
-        console.log('[MAIN] Добавляем обработчики событий...');
         this.addEventListeners();
-        console.log('[MAIN] UI успешно создан!');
 
-        // Слушаем, когда панель Super Hover (или другая) закроется
         document.addEventListener('super-panel-closed', () => {
             this.isPanelOpen = false;
             this.elements.floatingIcon.classList.remove('super-hidden');
@@ -111,28 +102,10 @@ const dbmSUPER_APP = {
     },
 
     createFloatingIcon() {
-        console.log('[MAIN] Создаем плавающую иконку...');
         this.elements.floatingIcon = document.createElement('div');
         this.elements.floatingIcon.id = 'super-floating-icon';
-        
-        // Используем текст вместо картинки для надежности
-        this.elements.floatingIcon.innerHTML = `
-            <div style="color: white; font-weight: bold; font-size: 14px;">SUPER</div>
-        `;
-        
+        this.elements.floatingIcon.innerHTML = `<div>SUPER</div>`;
         document.body.appendChild(this.elements.floatingIcon);
-        console.log('[MAIN] Плавающая иконка добавлена в DOM');
-        
-        // Проверяем, что иконка действительно в DOM
-        setTimeout(() => {
-            const icon = document.getElementById('super-floating-icon');
-            if (icon) {
-                console.log('[MAIN] ✅ Иконка найдена в DOM:', icon);
-                console.log('[MAIN] Стили иконки:', window.getComputedStyle(icon));
-            } else {
-                console.error('[MAIN] ❌ Иконка НЕ найдена в DOM!');
-            }
-        }, 100);
     },
 
     createSolutionsWindow() {
@@ -143,19 +116,20 @@ const dbmSUPER_APP = {
         let cardsHTML = '';
         for (const key in this.solutions) {
             const solution = this.solutions[key];
+            const hasAccess = this.userSubscription.status === 'active' || !solution.isPaid;
             
-            // Умное условие: показывать Tilda моды только на сайтах Tilda
-            if (key === 'tilda-mods' && !window.location.hostname.includes('tilda.cc')) {
-                continue;
-            }
-
             cardsHTML += `
-                <div class="card" data-solution-key="${key}">
-                    <h4>${solution.title}</h4>
+                <div class="card ${hasAccess ? '' : 'disabled'}" data-solution-key="${key}">
+                    <h4>${solution.title} ${!hasAccess ? '🔒' : ''}</h4>
                     <p>${solution.description}</p>
                 </div>`;
         }
+        
         this.elements.solutionsWindow.innerHTML = cardsHTML;
+        if (this.userSubscription.status !== 'active') {
+             this.elements.solutionsWindow.innerHTML += '<p class="upgrade-prompt">Оформите подписку для полного доступа</p>';
+        }
+
         document.body.appendChild(this.elements.solutionsWindow);
     },
 
@@ -168,9 +142,12 @@ const dbmSUPER_APP = {
         this.elements.solutionsWindow.addEventListener('click', (e) => {
             const card = e.target.closest('.card');
             if (card) {
+                if (card.classList.contains('disabled')) {
+                    alert('Эта функция доступна только в платной подписке. Пожалуйста, откройте попап расширения и оформите подписку.');
+                    return;
+                }
                 this.elements.solutionsWindow.classList.add('super-hidden');
-                const solutionKey = card.dataset.solutionKey;
-                this.launchSolution(solutionKey);
+                this.launchSolution(card.dataset.solutionKey);
             }
         });
     },
@@ -278,16 +255,10 @@ const dbmSUPER_APP = {
     }
 };
 
-// Безопасная инициализация
+// --- Безопасная инициализация ---
 try {
-    console.log('[MAIN] Начинаем инициализацию dbmSUPER_APP...');
     dbmSUPER_APP.init();
-    console.log('[MAIN] Инициализация dbmSUPER_APP завершена успешно');
-    
-    // Делаем dbmSUPER_APP доступным глобально для отладки
     window.dbmSUPER_APP = dbmSUPER_APP;
-    console.log('[MAIN] dbmSUPER_APP доступен как window.dbmSUPER_APP');
-    console.log('[MAIN] Для принудительного создания UI: dbmSUPER_APP.buildUI()');
 } catch (error) {
     console.error('[MAIN] Ошибка при инициализации dbmSUPER_APP:', error);
 }

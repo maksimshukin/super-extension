@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "lib": ["dom", "dom.iterable", "esnext", "deno.ns"]
+    },
+    "lint": {
+      "files": {
+        "include": ["supabase/functions/"]
+      },
+      "rules": {
+        "tags": ["recommended"],
+        "exclude": ["no-explicit-any"]
+      }
+    },
+    "fmt": {
+      "files": {
+        "include": ["supabase/functions/"]
+      }
+    }
+  }
