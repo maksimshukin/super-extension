@@ -401,58 +401,132 @@ dbmGetControlsHTML() {
 
             this.updateDynamicButtons(); // ✅ ИСПРАВЛЕНИЕ: Вызываем новую единую функцию
         },
-        dbmUpdateHeader(title, isEditor = false, subtitle = '') {
+//         dbmUpdateHeader(title, isEditor = false, subtitle = '') {
+//     const blockInfo = this.getBlockInfo(title);
+//     const cleanedTitle = this.cleanSelectorForDisplay(title);
+//             const titleText = isEditor ? (cleanedTitle || 'Редактор эффектов') : '';
+        
+//             // ✅ Переменная backButton и ее обработчик полностью удалены отсюда
+        
+//             const effectState = this.allEffects[this.activeParentSelector] || {};
+//             const isMobileDisabled = effectState.disableOnMobile === undefined ? true : effectState.disableOnMobile;
+        
+//             const controlsHTML = isEditor ? `
+//                 <div class="dbm-editor-controls">
+//                     <div class="dbm-editor-control-row">
+//                 <span>Добавлять ID / класс блока</span>
+//                         <label class="dbm-switch as-label">
+//                             <input type="checkbox" id="dbm-prefix-toggle-checkbox" ${this.useBlockPrefix ? 'checked' : ''}>
+//                             <span class="dbm-slider"></span>
+//             </label>
+//                     </div>
+//                     <div class="dbm-editor-control-row">
+//                         <span>Выключить на мобильных</span>
+//                         <label class="dbm-switch as-label">
+//                             <input type="checkbox" id="dbm-mobile-disable-checkbox" ${isMobileDisabled ? 'checked' : ''}>
+//                             <span class="dbm-slider"></span>
+//                         </label>
+//                     </div>
+//         </div>` : '';
+
+//     const headerHTML = `
+//                 <div class="dbm-header-main-row">
+//                     <div class="dbm-header-title-group">
+//                         <div class="dbm-header-title-text">
+//                             ${blockInfo ? `<div class="dbm-block-info" title="${blockInfo.title}">${blockInfo.cod} | ${blockInfo.title}</div>` : ''}
+//                             ${subtitle ? `<div class="dbm-block-info">Пресет: <strong>${subtitle}</strong></div>` : ''}
+//                             ${isEditor ? `<h2 id="dbm-editable-selector-title" title="${title}">${titleText}</h2>` : ''}
+//                     </div>
+//                 </div>
+//                 ${controlsHTML}
+//     `;
+    
+//     // Используем SuperPanelManager для установки заголовка
+//     if (window.SuperPanelManager) {
+//         window.SuperPanelManager.setHeader(headerHTML);
+//     }
+    
+//     if (isEditor) {
+//                 const h2Element = document.querySelector('#dbm-editable-selector-title');
+//         this.makeSelectorEditable(h2Element);
+
+//                 document.getElementById('dbm-prefix-toggle-checkbox').addEventListener('change', (e) => {
+//             this.useBlockPrefix = e.target.checked;
+//             // Синхронизируем с SuperSelectionManager
+//             if (window.SuperSelectionManager) {
+//                 window.SuperSelectionManager.useBlockPrefix = e.target.checked;
+//             }
+//             const oldSelector = this.activeParentSelector;
+//             const element = document.querySelector(oldSelector);
+//             if (element) {
+//                 const newSelector = this.getUniqueSelector(element);
+//                 if (newSelector && newSelector !== oldSelector) {
+//                     this.allEffects[newSelector] = this.allEffects[oldSelector];
+//                     delete this.allEffects[oldSelector];
+//                             this.dbmShowEditorView(newSelector);
+//                 }
+//             }
+//         });
+                
+//                 document.getElementById('dbm-mobile-disable-checkbox').addEventListener('change', (e) => {
+//                     if (this.allEffects[this.activeParentSelector]) {
+//                         this.allEffects[this.activeParentSelector].disableOnMobile = e.target.checked;
+//                         this.generateAndApplyCSS();
+//     }
+//                 });
+//             }
+// },
+dbmUpdateHeader(title, isEditor = false, subtitle = '') {
+    console.log('[DEBUG] dbmUpdateHeader вызван с title:', title, 'isEditor:', isEditor);
     const blockInfo = this.getBlockInfo(title);
+    console.log('[DEBUG] blockInfo в dbmUpdateHeader:', blockInfo);
     const cleanedTitle = this.cleanSelectorForDisplay(title);
-            const titleText = isEditor ? (cleanedTitle || 'Редактор эффектов') : '';
-        
-            // ✅ Переменная backButton и ее обработчик полностью удалены отсюда
-        
-            const effectState = this.allEffects[this.activeParentSelector] || {};
-            const isMobileDisabled = effectState.disableOnMobile === undefined ? true : effectState.disableOnMobile;
-        
-            const controlsHTML = isEditor ? `
-                <div class="dbm-editor-controls">
-                    <div class="dbm-editor-control-row">
+    const titleText = isEditor ? (cleanedTitle || 'Редактор эффектов') : '';
+    
+    const effectState = this.allEffects[this.activeParentSelector] || {};
+    const isMobileDisabled = effectState.disableOnMobile === undefined ? true : effectState.disableOnMobile;
+
+    const controlsHTML = isEditor ? `
+        <div class="dbm-editor-controls">
+            <div class="dbm-editor-control-row">
                 <span>Добавлять ID / класс блока</span>
-                        <label class="dbm-switch as-label">
-                            <input type="checkbox" id="dbm-prefix-toggle-checkbox" ${this.useBlockPrefix ? 'checked' : ''}>
-                            <span class="dbm-slider"></span>
-            </label>
-                    </div>
-                    <div class="dbm-editor-control-row">
-                        <span>Выключить на мобильных</span>
-                        <label class="dbm-switch as-label">
-                            <input type="checkbox" id="dbm-mobile-disable-checkbox" ${isMobileDisabled ? 'checked' : ''}>
-                            <span class="dbm-slider"></span>
-                        </label>
-                    </div>
+                <label class="dbm-switch as-label">
+                    <input type="checkbox" id="dbm-prefix-toggle-checkbox" ${this.useBlockPrefix ? 'checked' : ''}>
+                    <span class="dbm-slider"></span>
+                </label>
+            </div>
+            <div class="dbm-editor-control-row">
+                <span>Выключить на мобильных</span>
+                <label class="dbm-switch as-label">
+                    <input type="checkbox" id="dbm-mobile-disable-checkbox" ${isMobileDisabled ? 'checked' : ''}>
+                    <span class="dbm-slider"></span>
+                </label>
+            </div>
         </div>` : '';
 
     const headerHTML = `
-                <div class="dbm-header-main-row">
-                    <div class="dbm-header-title-group">
-                        <div class="dbm-header-title-text">
-                            ${blockInfo ? `<div class="dbm-block-info" title="${blockInfo.title}">${blockInfo.cod} | ${blockInfo.title}</div>` : ''}
-                            ${subtitle ? `<div class="dbm-block-info">Пресет: <strong>${subtitle}</strong></div>` : ''}
-                            ${isEditor ? `<h2 id="dbm-editable-selector-title" title="${title}">${titleText}</h2>` : ''}
-                    </div>
+        <div class="dbm-header-main-row">
+            <div class="dbm-header-title-group">
+                <div class="dbm-header-title-text">
+                    ${blockInfo ? `<div class="dbm-block-info" title="${blockInfo.title}">${blockInfo.cod} | ${blockInfo.title}</div>` : ''}
+                    ${subtitle ? `<div class="dbm-block-info">Пресет: <strong>${subtitle}</strong></div>` : ''}
+                    ${isEditor ? `<h2 id="dbm-editable-selector-title" title="${title}">${titleText}</h2>` : ''}
                 </div>
-                ${controlsHTML}
+            </div>
+            ${controlsHTML}
+        </div>
     `;
-    
-    // Используем SuperPanelManager для установки заголовка
+
     if (window.SuperPanelManager) {
         window.SuperPanelManager.setHeader(headerHTML);
     }
-    
+
     if (isEditor) {
-                const h2Element = document.querySelector('#dbm-editable-selector-title');
+        const h2Element = document.querySelector('#dbm-editable-selector-title');
         this.makeSelectorEditable(h2Element);
 
-                document.getElementById('dbm-prefix-toggle-checkbox').addEventListener('change', (e) => {
+        document.getElementById('dbm-prefix-toggle-checkbox').addEventListener('change', (e) => {
             this.useBlockPrefix = e.target.checked;
-            // Синхронизируем с SuperSelectionManager
             if (window.SuperSelectionManager) {
                 window.SuperSelectionManager.useBlockPrefix = e.target.checked;
             }
@@ -463,20 +537,21 @@ dbmGetControlsHTML() {
                 if (newSelector && newSelector !== oldSelector) {
                     this.allEffects[newSelector] = this.allEffects[oldSelector];
                     delete this.allEffects[oldSelector];
-                            this.dbmShowEditorView(newSelector);
+                    this.dbmShowEditorView(newSelector);
                 }
             }
         });
-                
-                document.getElementById('dbm-mobile-disable-checkbox').addEventListener('change', (e) => {
-                    if (this.allEffects[this.activeParentSelector]) {
-                        this.allEffects[this.activeParentSelector].disableOnMobile = e.target.checked;
-                        this.generateAndApplyCSS();
-    }
-                });
+        
+        document.getElementById('dbm-mobile-disable-checkbox').addEventListener('change', (e) => {
+            if (this.allEffects[this.activeParentSelector]) {
+                this.allEffects[this.activeParentSelector].disableOnMobile = e.target.checked;
+                this.generateAndApplyCSS();
             }
+        });
+    }
 },
-        dbmUpdateState(key, prop, value) {
+
+dbmUpdateState(key, prop, value) {
     const effects = this.allEffects[this.activeParentSelector];
     if (!effects) return;
 
@@ -1603,112 +1678,107 @@ activateEditorFor(tabItem) {
             });
             this.updateEffectCountInCards();
         },
-updateManagerList() {
-    this.els.effectsList.innerHTML = '';
-    const effectKeys = Object.keys(this.allEffects).filter(key => !key.startsWith('__'));
+        updateManagerList() {
+            this.els.effectsList.innerHTML = '';
+            const effectKeys = Object.keys(this.allEffects).filter(key => !key.startsWith('__'));
             const managerHeader = document.getElementById('dbm-manager-header');
-
-    if (effectKeys.length === 0) {
+        
+            if (effectKeys.length === 0) {
                 if (managerHeader) managerHeader.style.display = 'none';
                 
-                // Восстановленный текст для пустого состояния
                 this.els.effectsList.innerHTML = `<div class="dbm-no-effects-placeholder">
                     <div class="icon">🎨</div>
                     <h3>Эффектов пока нет</h3>
                     <p>Нажмите "Создать новый эффект", чтобы выбрать элемент на странице.</p>
                 </div>`;
                 
-                this.updateDynamicButtons(); // Обновляем видимость кнопок в футере
-        return;
-    }
-
+                this.updateDynamicButtons();
+                return;
+            }
+            
             if (managerHeader) managerHeader.style.display = 'flex';
         
-            // Цикл для отрисовки всех созданных эффектов
             for (const selector of effectKeys) {
                 const effect = this.allEffects[selector];
                 const blockInfo = this.getBlockInfo(selector);
                 
-                // Вспомогательная функция для подсчета активных слоев
-    const countActiveLayersAndChildren = (state) => {
-        let total = { activeLayers: 0, children: 0 };
+                const countActiveLayersAndChildren = (state) => {
+                    let total = { activeLayers: 0, children: 0 };
                     const hasActiveEffects = (s) => Object.keys(this.getDefaultState()).some(key => {
                         return s[key] !== undefined && s[key] !== this.getDefaultState()[key] && key !== 'children';
                     });
-
-        if (hasActiveEffects(state)) {
-            total.activeLayers++;
-        }
-
-        if (state.children) {
-            const childKeys = Object.keys(state.children);
-            total.children += childKeys.length;
-            childKeys.forEach(key => {
-                const childStats = countActiveLayersAndChildren(state.children[key]);
-                total.activeLayers += childStats.activeLayers;
-                total.children += childStats.children;
-            });
-        }
-        return total;
-    };
-
-        const stats = countActiveLayersAndChildren(effect.parent);
-        const hasEffectsCount = (effect._hasEffects || []).length;
-
-        const item = document.createElement('div');
+                    
+                    if (hasActiveEffects(state)) {
+                        total.activeLayers++;
+                    }
+        
+                    if (state.children) {
+                        const childKeys = Object.keys(state.children);
+                        total.children += childKeys.length;
+                        childKeys.forEach(key => {
+                            const childStats = countActiveLayersAndChildren(state.children[key]);
+                            total.activeLayers += childStats.activeLayers;
+                            total.children += childStats.children;
+                        });
+                    }
+                    return total;
+                };
+                
+                const stats = countActiveLayersAndChildren(effect.parent);
+                const hasEffectsCount = (effect._hasEffects || []).length;
+                
+                const item = document.createElement('div');
                 item.className = 'dbm-effect-item-card';
-        item.dataset.selector = selector;
-        item.innerHTML = `
+                item.dataset.selector = selector;
+                item.innerHTML = `
                     <div class="dbm-effect-item-header">
                         <div class="dbm-effect-item-info">
                             <div class="dbm-effect-item-block-name">${blockInfo ? `${blockInfo.cod} | ${blockInfo.title}` : 'Пользовательский блок'}</div>
                             <div class="dbm-effect-item-selector">${this.cleanSelectorForDisplay(selector)}</div>
-                </div>
+                        </div>
                         <div class="dbm-effect-item-actions">
-                    <button data-selector-delete="${selector}" class="dbm-btn-icon dbm-btn-secondary delete-effect-btn  dbm-btn-sm" title="Удалить">
-                                ${window.SuperSelectionManager?.ICONS?.trash || ''}
-                    </button>
-                </div>
-            </div>
+                            <button data-selector-delete="${selector}" class="dbm-icon-btn delete-effect-btn" title="Удалить">
+                                ${SuperSelectionManager.ICONS.trash}
+                            </button>
+                        </div>
+                    </div>
                     <div class="dbm-effect-item-stats">
                         <span class="dbm-effect-item-badge">Активных слоев: <strong>${stats.activeLayers}</strong></span>
                         <span class="dbm-effect-item-badge">Дочерних: <strong>${stats.children}</strong></span>
                         <span class="dbm-effect-item-badge">:has(): <strong>${hasEffectsCount}</strong></span>
-            </div>
-        `;
-        this.els.effectsList.appendChild(item);
-
-                // Добавляем подсветку на странице при наведении
-        item.addEventListener('mouseenter', () => {
-            try {
+                    </div>
+                `;
+                this.els.effectsList.appendChild(item);
+        
+                item.addEventListener('mouseenter', () => {
+                    try {
                         document.querySelectorAll(selector).forEach(el => el.classList.add('dbm-highlight-element-manager'));
                     } catch (e) { console.error("Некорректный селектор для подсветки:", selector); }
-        });
-        item.addEventListener('mouseleave', () => {
-             try {
+                });
+                item.addEventListener('mouseleave', () => {
+                     try {
                         document.querySelectorAll(selector).forEach(el => el.classList.remove('dbm-highlight-element-manager'));
-            } catch (e) {}
-        });
-    }
-
-            // Назначаем обработчики кликов на карточки и кнопки удаления
+                    } catch (e) {}
+                });
+            }
+        
             this.els.effectsList.querySelectorAll('.dbm-effect-item-card').forEach(card => card.addEventListener('click', e => {
-        if (e.target.closest('.delete-effect-btn')) return;
+                if (e.target.closest('.delete-effect-btn')) return;
                 this.dbmShowEditorView(e.currentTarget.dataset.selector);
-    }));
-
-    this.els.effectsList.querySelectorAll('.delete-effect-btn').forEach(b => b.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const selector = e.currentTarget.dataset.selectorDelete;
-        const confirmed = await this.showModalConfirm("Удалить эффект?", `Вы уверены, что хотите удалить эффект для селектора <strong>${this.cleanSelectorForDisplay(selector)}</strong>?`);
-        if (confirmed) {
-            delete this.allEffects[selector];
-            this.generateAndApplyCSS();
-            this.updateManagerList();
-                    this.updateDynamicButtons(); // Обновляем кнопки после удаления
-        }
-    }));
-},
+            }));
+        
+            this.els.effectsList.querySelectorAll('.delete-effect-btn').forEach(b => b.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const selector = e.currentTarget.dataset.selectorDelete;
+                const confirmed = await this.showModalConfirm("Удалить эффект?", `Вы уверены, что хотите удалить эффект для селектора <strong>${this.cleanSelectorForDisplay(selector)}</strong>?`);
+                if (confirmed) {
+                    delete this.allEffects[selector];
+                    this.generateAndApplyCSS();
+                    this.updateManagerList();
+                    this.updateDynamicButtons();
+                }
+            }));
+        },
         deleteTarget(key) {
             const effects = this.allEffects[this.activeParentSelector];
             if (!effects) return;
@@ -1808,20 +1878,13 @@ updateManagerList() {
             return '';
         },
         getBlockInfo(selector) {
+            console.log('[DEBUG] getBlockInfo вызван с селектором:', selector);
             if (window.SuperSelectionManager) {
-                return window.SuperSelectionManager.getBlockInfo(selector);
+                const result = window.SuperSelectionManager.getBlockInfo(selector);
+                console.log('[DEBUG] getBlockInfo результат:', result);
+                return result;
             }
-            // Fallback если SuperSelectionManager недоступен
-            if (!selector || typeof selector !== 'string' || selector.startsWith('__')) return null;
-            try {
-                const el = document.querySelector(selector);
-                if (!el) return null;
-                const tildaBlock = el.closest('.r.t-rec');
-                if (tildaBlock) {
-                    const recordType = tildaBlock.getAttribute('data-record-type');
-                    return window.SuperSelectionManager?.TILDA_BLOCK_MAP?.[recordType] || null;
-                }
-            } catch(e) { return null; }
+            console.log('[DEBUG] SuperSelectionManager не найден');
             return null;
         },
         addHighlightEventListeners(containerElement) {

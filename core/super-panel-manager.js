@@ -84,6 +84,12 @@ init() {
         this.headerContainer = document.getElementById('dbm-panel-header-content');
         this.footerContainer = document.getElementById('dbm-panel-footer');
         this.overlay = document.getElementById('dbm-panel-overlay');
+        
+        console.log('[DEBUG] SuperPanelManager инициализирован:');
+        console.log('[DEBUG] panel:', this.panel);
+        console.log('[DEBUG] headerContainer:', this.headerContainer);
+        console.log('[DEBUG] contentContainer:', this.contentContainer);
+        console.log('[DEBUG] footerContainer:', this.footerContainer);
     },
 
     addEventListeners() {
@@ -214,12 +220,14 @@ init() {
     },
 
     setHeader(headerHTML) {
+        console.log('[DEBUG] setHeader вызван с HTML:', headerHTML);
         if (!this.headerContainer) {
             console.error('[SuperPanelManager] Header container не найден!');
             return;
         }
-        console.log('[SuperPanelManager] Устанавливаем заголовок...');
+        console.log('[SuperPanelManager] Устанавливаем заголовок в контейнер:', this.headerContainer);
         this.headerContainer.innerHTML = headerHTML;
+        console.log('[DEBUG] Заголовок установлен, содержимое контейнера:', this.headerContainer.innerHTML);
     },
 
     setContent(contentHTML) {

@@ -97,14 +97,14 @@ if (!window.dbmSwiperArchitect) {
         showManagerView() {
             this.cleanupPreview();
             this.activeSliderKey = null;
-
+        
             const sliderKeys = Object.keys(this.allSliders);
             let contentHTML = (sliderKeys.length === 0)
                 ? `<div class="dbm-subsection"><div class="dbm-no-effects-placeholder"><h3>Слайдеров пока нет</h3><p>Нажмите "Создать новый слайдер", чтобы выбрать элемент на странице.</p></div></div>`
                 : `<div class="dbm-subsection"><h3>Все слайдеры</h3><div id="dbm-effects-list" class="dbm-sliders-list">${sliderKeys.map(key => this.renderSliderCard(key, this.allSliders[key])).join('')}</div></div>`;
             
             const footerHTML = `<button id="dbm-create-new-slider-btn" class="dbm-btn dbm-btn-primary">Создать новый слайдер</button>`;
-
+        
             SuperPanelManager.setHeader('');
             SuperPanelManager.setContent(contentHTML);
             SuperPanelManager.setFooter(footerHTML);
@@ -113,11 +113,16 @@ if (!window.dbmSwiperArchitect) {
         },
 
         renderSliderCard(key, sliderData) {
+            console.log('[DEBUG] renderSliderCard вызван с key:', key);
             const { slideSelector } = sliderData;
+            const blockInfo = SuperSelectionManager.getBlockInfo(key);
+            console.log('[DEBUG] blockInfo в renderSliderCard:', blockInfo);
+        
             return `
                 <div class="dbm-effect-item-card" data-slider-key="${key}">
                     <div class="dbm-effect-item-header">
                         <div class="dbm-effect-item-info">
+                            <div class="dbm-effect-item-block-name">${blockInfo ? `${blockInfo.cod} | ${blockInfo.title}` : 'Пользовательский блок'}</div>
                             <div class="dbm-effect-item-selector" title="${key}">Контейнер: ${SuperSelectionManager.cleanSelectorForDisplay(key)}</div>
                             <div class="dbm-effect-item-selector" style="font-size: 12px; color: #6B7280;" title="${slideSelector}">Слайд: ${SuperSelectionManager.cleanSelectorForDisplay(slideSelector)}</div>
                         </div>
@@ -147,44 +152,126 @@ if (!window.dbmSwiperArchitect) {
         },
 
         renderEditorHeader(key, data) {
+            console.log('[DEBUG] renderEditorHeader вызван с key:', key);
             const containerElement = document.querySelector(key);
-            // ИЗМЕНЕНИЕ: Обращаемся к SuperSelectionManager за информацией о блоке
-            const blockInfo = SuperSelectionManager.getTildaBlockInfo(containerElement);
+            const blockInfo = SuperSelectionManager.getBlockInfo(key);
+            console.log('[DEBUG] blockInfo в renderEditorHeader:', blockInfo);
             const isPrefixEnabled = data.config.useBlockPrefix !== false;
             
-            let blockInfoHTML = '';
-            if (blockInfo && (blockInfo.type || blockInfo.name)) {
-                const type = blockInfo.type ? `<div class="dbm-header-block-type">${blockInfo.type}</div>` : '';
-                const name = blockInfo.name ? `<div class="dbm-header-block-name">${blockInfo.name}</div>` : '';
-                // Собираем блок с информацией о типе и имени блока Tilda
-                blockInfoHTML = `<div class="dbm-header-block-info">${type}${name}</div>`;
-            }
-
-            // ИЗМЕНЕНИЕ: Новая HTML-структура шапки
+            // Очищаем селектор для отображения (убираем ID)
+            const cleanKey = this.cleanSelectorForDisplay(key);
+            const cleanSlideSelector = this.cleanSelectorForDisplay(data.slideSelector);
+            
+            const controlsHTML = `
+                <div class="dbm-editor-controls">
+                    <div class="dbm-editor-control-row">
+                        <span>Добавлять ID / класс блока</span>
+                        <label class="dbm-switch as-label">
+                            <input type="checkbox" id="dbm-prefix-toggle-checkbox" ${isPrefixEnabled ? 'checked' : ''}>
+                            <span class="dbm-slider"></span>
+                        </label>
+                    </div>
+                </div>`;
+        
             return `
                 <div class="dbm-header-main-row">
                     <div class="dbm-header-title-group">
-                        ${blockInfoHTML}
                         <div class="dbm-header-title-text">
-                            <h2 id="dbm-editable-selector-title" title="Нажмите, чтобы изменить контейнер слайдера" style="cursor: pointer;">${key}</h2>
+                            ${blockInfo ? `<div class="dbm-block-info" title="${blockInfo.title}">${blockInfo.cod} | ${blockInfo.title}</div>` : ''}
+                            <h2 id="dbm-editable-selector-title" title="Нажмите, чтобы изменить контейнер слайдера" style="cursor: pointer;">${cleanKey}</h2>
                             <small>Контейнер слайдера</small>
                         </div>
                     </div>
-                    <div class="dbm-editor-controls">
-                        <div class="dbm-editor-control-row">
-                            <span>Добавлять ID / класс блока</span>
-                            <label class="dbm-switch as-label">
-                                <input type="checkbox" id="dbm-prefix-toggle-checkbox" ${isPrefixEnabled ? 'checked' : ''}>
-                                <span class="dbm-slider"></span>
-                            </label>
-                        </div>
+                    ${controlsHTML}
+                    <div class="dbm-form-group" style="margin-top: 10px;">
+                        <label>Селектор для каждого слайда:</label>
+                        <div class="dbm-editable-selector-input" data-selector-type="slide" title="Нажмите, чтобы изменить селектор слайда">${cleanSlideSelector}</div>
                     </div>
                 </div>
-                <div class="dbm-form-group" style="margin-top: 10px;">
-                    <label>Селектор для каждого слайда:</label>
-                    <div class="dbm-editable-selector" data-selector-type="slide" title="Нажмите, чтобы изменить селектор слайда">${data.slideSelector}</div>
-                </div>
             `;
+        },
+
+        cleanSelectorForDisplay(selector) {
+            if (!selector || typeof selector !== 'string') return '';
+            // Убираем префикс блока (#rec... или .uc-...) для отображения
+            return selector.replace(/^(#rec[0-9]+|\.uc-[\w-]+)\s*/, '');
+        },
+
+        makeSelectorEditable(element, selectorType) {
+            if (!element || !this.activeSliderKey) return;
+            
+            const currentText = element.textContent.trim();
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'dbm-editable-selector-input';
+            
+            element.replaceWith(input);
+            input.focus();
+            input.select();
+            
+            const saveChanges = () => {
+                const newValue = input.value.trim();
+                if (newValue && newValue !== currentText) {
+                    // Обновляем селектор в данных
+                    if (selectorType === 'container') {
+                        // Для контейнера нужно обновить ключ
+                        const oldKey = this.activeSliderKey;
+                        const newKey = this.buildFullSelector(newValue);
+                        
+                        if (newKey !== oldKey) {
+                            // Перемещаем данные на новый ключ
+                            this.allSliders[newKey] = this.allSliders[oldKey];
+                            delete this.allSliders[oldKey];
+                            this.activeSliderKey = newKey;
+                            this.saveSliders();
+                            
+                            // Обновляем заголовок
+                            SuperPanelManager.setHeader(this.renderEditorHeader(newKey, this.allSliders[newKey]));
+                            this.addEditorEventListeners();
+                        }
+                    } else if (selectorType === 'slide') {
+                        // Для слайда обновляем slideSelector
+                        this.allSliders[this.activeSliderKey].slideSelector = this.buildFullSelector(newValue);
+                        this.saveSliders();
+                        
+                        // Обновляем заголовок
+                        SuperPanelManager.setHeader(this.renderEditorHeader(this.activeSliderKey, this.allSliders[this.activeSliderKey]));
+                        this.addEditorEventListeners();
+                    }
+                } else {
+                    // Восстанавливаем исходный текст
+                    input.replaceWith(element);
+                }
+            };
+            
+            input.addEventListener('blur', saveChanges);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    saveChanges();
+                } else if (e.key === 'Escape') {
+                    input.replaceWith(element);
+                }
+            });
+        },
+
+        buildFullSelector(cleanSelector) {
+            if (!cleanSelector) return '';
+            
+            // Если селектор уже содержит ID, возвращаем как есть
+            if (cleanSelector.startsWith('#rec')) {
+                return cleanSelector;
+            }
+            
+            // Ищем ID блока в текущем активном селекторе
+            const currentKey = this.activeSliderKey;
+            const idMatch = currentKey.match(/^(#rec[0-9]+)/);
+            
+            if (idMatch) {
+                return `${idMatch[1]} ${cleanSelector}`;
+            }
+            
+            return cleanSelector;
         },
 
         // Обновленный рендер карточек настроек
@@ -220,18 +307,24 @@ if (!window.dbmSwiperArchitect) {
                     delete this.allSliders[key];
                     this.saveSliders();
                     this.showManagerView();
-                });
             });
+        });
         },
         
         addEditorEventListeners() {
             document.getElementById('dbm-generate-slider-btn')?.addEventListener('click', () => this.generateSliderCode());
             document.querySelectorAll('.dbm-property-group-card').forEach(card => card.addEventListener('click', () => this.showSettingsModal(card.dataset.category)));
-            document.querySelectorAll('.dbm-editable-selector').forEach(el => el.addEventListener('click', () => this.reselectSelector(el.dataset.selectorType)));
+            document.querySelectorAll('.dbm-editable-selector-input').forEach(el => el.addEventListener('click', () => this.reselectSelector(el.dataset.selectorType)));
             document.getElementById('dbm-prefix-toggle-checkbox')?.addEventListener('change', (e) => {
                 this.allSliders[this.activeSliderKey].config.useBlockPrefix = e.target.checked;
                 this.saveSliders();
             });
+            
+            // Добавляем обработчик для редактирования заголовка контейнера
+            const editableTitle = document.getElementById('dbm-editable-selector-title');
+            if (editableTitle) {
+                editableTitle.addEventListener('click', () => this.makeSelectorEditable(editableTitle, 'container'));
+            }
         },
         
         startCardSelection() {
@@ -266,7 +359,9 @@ if (!window.dbmSwiperArchitect) {
                         delete this.allSliders[oldSliderKey];
                         this.allSliders[selector] = oldSliderData;
                         this.activeSliderKey = selector;
-                    } else { oldSliderData.slideSelector = selector; }
+                    } else if (type === 'slide') {
+                        oldSliderData.slideSelector = selector;
+                    }
                     this.saveSliders();
                     this.showEditorView(this.activeSliderKey);
                      SuperPanelManager.open();
@@ -633,7 +728,7 @@ renderWidthModal() {
             </div>`;
     });
 
-    return `<div class="dbm-tabs-container"><div class="dbm-tabs">${tabsHTML}</div><div class="dbm-tabs-content">${contentHTML}</div></div>`;
+    return `<div class="dbm-tabs-container"><div class="dbm-tab-navigation">${tabsHTML}</div><div class="dbm-tabs-content">${contentHTML}</div></div>`;
 },
 
 // 3. Генератор HTML для модального окна "Навигация"
@@ -788,9 +883,9 @@ renderResponsiveModal() {
         const isActive = index === 0;
         const isDefault = bpKey === 'default';
 
-        // ИСПРАВЛЕНО: Используем <button> и добавляем классы dbm-btn dbm-btn-sm
+        // ИСПРАВЛЕНО: Используем <button> с правильными классами для табов
         tabsHTML += `
-            <button class="dbm-tab-button dbm-btn dbm-btn-sm ${isActive ? 'active' : ''}" data-tab="${bpKey}">
+            <button class="dbm-tab-button ${isActive ? 'active' : ''}" data-tab="${bpKey}">
                 ${title}
                 ${!isDefault ? `<span class="dbm-delete-bp-btn" data-bp="${bpKey}">&times;</span>` : ''}
             </button>`;
@@ -828,7 +923,7 @@ renderResponsiveModal() {
     
     // Блок добавления нового брейкпоинта
     tabsHTML += `
-        <div class="dbm-tab-button dbm-btn dbm-btn-sm dbm-add-bp-tab" data-tab="add-new-bp">
+        <div class="dbm-tab-button dbm-add-bp-tab" data-tab="add-new-bp">
             <span class="plus-icon">+</span>
             <div class="dbm-add-bp-form" style="display: none;">
                 <input type="number" placeholder="992" class="dbm-new-bp-input">
@@ -836,7 +931,7 @@ renderResponsiveModal() {
             </div>
         </div>`;
 
-    return `<div class="dbm-tabs-container"><div class="dbm-tabs">${tabsHTML}</div><div class="dbm-tabs-content">${contentHTML}</div></div>`;
+    return `<div class="dbm-tabs-container"><div class="dbm-tab-navigation">${tabsHTML}</div><div class="dbm-tabs-content">${contentHTML}</div></div>`;
 },
 
 // --- MODAL EVENT LISTENERS ---
@@ -851,14 +946,28 @@ addWidthEventListeners() {
     this.addGenericModalEventListeners();
     const modal = SuperPanelManager.overlay;
 
-    // Логика переключения табов
-    modal.querySelectorAll('.dbm-tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            modal.querySelectorAll('.dbm-tab-button, .dbm-tab-content').forEach(el => el.classList.remove('active'));
-            button.classList.add('active');
-            modal.querySelector(`.dbm-tab-content[data-tab-content="${button.dataset.tab}"]`).classList.add('active');
+    // Добавляем небольшую задержку для гарантии загрузки DOM
+    setTimeout(() => {
+        // Логика переключения табов
+        modal.querySelectorAll('.dbm-tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Убираем активный класс со всех табов и контента
+                modal.querySelectorAll('.dbm-tab-button').forEach(btn => btn.classList.remove('active'));
+                modal.querySelectorAll('.dbm-tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Добавляем активный класс к выбранному табу
+                button.classList.add('active');
+                
+                // Показываем соответствующий контент
+                const targetContent = modal.querySelector(`.dbm-tab-content[data-tab-content="${button.dataset.tab}"]`);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                
+                console.log('[DEBUG] Переключен таб ширины:', button.dataset.tab);
+            });
         });
-    });
+    }, 10);
 
     // Логика переключения типа ширины (гибкая/фиксированная)
     modal.querySelectorAll('select[data-config*="width.breakpoints"]').forEach(select => {
@@ -869,9 +978,9 @@ addWidthEventListeners() {
             content.querySelector(`[data-width-type="flexible-${bp}"]`).style.display = type === 'flexible' ? 'block' : 'none';
             content.querySelector(`[data-width-type="fixed-${bp}"]`).style.display = type === 'fixed' ? 'block' : 'none';
         });
-    });
-},
-
+        });
+    },
+    
 // 3. Обработчик событий для модального окна "Навигация"
 addNavigationEventListeners() {
     this.addGenericModalEventListeners();
@@ -905,22 +1014,36 @@ addResponsiveEventListeners() {
     const modal = SuperPanelManager.overlay;
     const config = this.allSliders[this.activeSliderKey].config;
 
-    // ИСПРАВЛЕНО: Логика переключения табов теперь работает с .dbm-tab-button
-    modal.querySelectorAll('.dbm-tab-button:not(.dbm-add-bp-tab)').forEach(button => {
-        button.addEventListener('click', (e) => {
-            if (e.target.classList.contains('dbm-delete-bp-btn')) return;
-            
-            // Скрываем форму добавления, если она была открыта
-            const addBpForm = modal.querySelector('.dbm-add-bp-form');
-            if (addBpForm) addBpForm.style.display = 'none';
-            const plusIcon = modal.querySelector('.plus-icon');
-            if (plusIcon) plusIcon.style.display = 'inline';
+    // Добавляем небольшую задержку для гарантии загрузки DOM
+    setTimeout(() => {
+        // ИСПРАВЛЕНО: Логика переключения табов теперь работает с .dbm-tab-button
+        modal.querySelectorAll('.dbm-tab-button:not(.dbm-add-bp-tab)').forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dbm-delete-bp-btn')) return;
+                
+                // Скрываем форму добавления, если она была открыта
+                const addBpForm = modal.querySelector('.dbm-add-bp-form');
+                if (addBpForm) addBpForm.style.display = 'none';
+                const plusIcon = modal.querySelector('.plus-icon');
+                if (plusIcon) plusIcon.style.display = 'inline';
 
-            modal.querySelectorAll('.dbm-tab-button, .dbm-tab-content').forEach(el => el.classList.remove('active'));
-            button.classList.add('active');
-            modal.querySelector(`.dbm-tab-content[data-tab-content="${button.dataset.tab}"]`).classList.add('active');
+                // Убираем активный класс со всех табов и контента
+                modal.querySelectorAll('.dbm-tab-button').forEach(btn => btn.classList.remove('active'));
+                modal.querySelectorAll('.dbm-tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Добавляем активный класс к выбранному табу
+                button.classList.add('active');
+                
+                // Показываем соответствующий контент
+                const targetContent = modal.querySelector(`.dbm-tab-content[data-tab-content="${button.dataset.tab}"]`);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                
+                console.log('[DEBUG] Переключен таб:', button.dataset.tab);
+            });
         });
-    });
+    }, 10);
 
     // Показ формы добавления нового брейкпоинта
     const addBpTab = modal.querySelector('.dbm-add-bp-tab');
@@ -973,9 +1096,99 @@ addResponsiveEventListeners() {
         // --- CODE GENERATION ---
         
         generateSliderCode() {
-            // ... (Вся логика генерации кода на основе новой структуры конфига)
-            const code = `...`; // Финальный код
-            this.showCodeModal(code);
+            if (!this.activeSliderKey || !this.allSliders[this.activeSliderKey]) {
+                console.error('Нет активного слайдера для генерации кода');
+                return;
+            }
+            
+            const sliderData = this.allSliders[this.activeSliderKey];
+            const config = sliderData.config;
+            const useBlockPrefix = config.useBlockPrefix !== false;
+            
+            // Определяем селекторы в зависимости от настройки
+            const containerSelector = useBlockPrefix ? this.activeSliderKey : this.cleanSelectorForDisplay(this.activeSliderKey);
+            const slideSelector = useBlockPrefix ? sliderData.slideSelector : this.cleanSelectorForDisplay(sliderData.slideSelector);
+            
+            // Генерируем уникальные CSS классы
+            const sliderId = `slider-${Date.now()}`;
+            const sliderClass = `swiper-${sliderId}`;
+            
+            const htmlCode = `<!-- HTML для слайдера -->
+<div class="${sliderClass}">
+    <div class="swiper-wrapper">
+        <!-- Слайды будут автоматически найдены по селектору: ${slideSelector} -->
+    </div>
+    
+    ${config.navigation ? `<!-- Навигация -->
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>` : ''}
+    
+    ${config.pagination ? `<!-- Пагинация -->
+    <div class="swiper-pagination"></div>` : ''}
+</div>`;
+
+            const cssCode = `/* CSS для слайдера */
+.${sliderClass} {
+    width: 100%;
+    height: 400px; /* Настройте по необходимости */
+}
+
+.${sliderClass} .swiper-slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+${config.navigation ? `.${sliderClass} .swiper-button-next,
+.${sliderClass} .swiper-button-prev {
+    color: #007bff;
+}` : ''}
+
+${config.pagination ? `.${sliderClass} .swiper-pagination-bullet {
+    background: #007bff;
+}` : ''}`;
+
+            const jsCode = `// JavaScript для инициализации слайдера
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Swiper
+    const swiper = new Swiper('${containerSelector} .${sliderClass}', {
+        // Основные настройки
+        slidesPerView: ${config.slidesPerView || 1},
+        spaceBetween: ${config.spaceBetween || 0},
+        loop: ${config.loop || false},
+        
+        // Автопрокрутка
+        ${config.autoplay ? `autoplay: {
+            delay: ${config.autoplayDelay || 3000},
+            disableOnInteraction: false,
+        },` : ''}
+        
+        // Навигация
+        ${config.navigation ? `navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },` : ''}
+        
+        // Пагинация
+        ${config.pagination ? `pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },` : ''}
+        
+        // Адаптивность
+        breakpoints: {
+            ${config.breakpoints ? Object.entries(config.breakpoints).map(([breakpoint, settings]) => 
+                `${breakpoint}: {
+                    slidesPerView: ${settings.slidesPerView || 1},
+                    spaceBetween: ${settings.spaceBetween || 0}
+                }`
+            ).join(',\n            ') : '768: { slidesPerView: 2 }, 1024: { slidesPerView: 3 }'}
+        }
+    });
+});`;
+
+            const fullCode = `${htmlCode}\n\n${cssCode}\n\n${jsCode}`;
+            this.showCodeModal(fullCode);
         },
 
         showCodeModal(code) {
