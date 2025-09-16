@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Data</title>
+</head>
+<body>
+    <h1>Отладка данных</h1>
+    <button id="check-plans">Проверить тарифы</button>
+    <button id="check-promocodes">Проверить промокоды</button>
+    <button id="check-user">Проверить пользователя</button>
+    <div id="result"></div>
+
+    <script src="../lib/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="../supabase.js"></script>
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        // Ждем инициализации Supabase
+        const waitForSupabase = () => {
+            return new Promise((resolve) => {
+                const checkSupabase = () => {
+                    if (window.supabaseClient) {
+                        resolve(window.supabaseClient);
+                    } else {
+                        setTimeout(checkSupabase, 100);
+                    }
+                };
+                checkSupabase();
+            });
+        };
+        
+        document.getElementById('check-plans').addEventListener('click', async () => {
+            try {
+                const supabase = await waitForSupabase();
+                const { data, error } = await supabase.from('plans').select('*').order('duration_months', { ascending: true });
+                console.log('Тарифы:', { data, error });
+                resultDiv.innerHTML = `<h3>Тарифы:</h3><pre>${JSON.stringify({ data, error }, null, 2)}</pre>`;
+            } catch (err) {
+                resultDiv.innerHTML = `<div style="color: red;">Ошибка: ${err.message}</div>`;
+            }
+        });
+        
+        document.getElementById('check-promocodes').addEventListener('click', async () => {
+            try {
+                const supabase = await waitForSupabase();
+                const { data, error } = await supabase.from('promocodes').select('*').eq('code', 'FREE3MONTHS');
+                console.log('Промокод FREE3MONTHS:', { data, error });
+                resultDiv.innerHTML = `<h3>Промокод FREE3MONTHS:</h3><pre>${JSON.stringify({ data, error }, null, 2)}</pre>`;
+            } catch (err) {
+                resultDiv.innerHTML = `<div style="color: red;">Ошибка: ${err.message}</div>`;
+            }
+        });
+        
+        document.getElementById('check-user').addEventListener('click', async () => {
+            try {
+                const supabase = await waitForSupabase();
+                const { data: { session } } = await supabase.auth.getSession();
+                console.log('Пользователь:', session);
+                resultDiv.innerHTML = `<h3>Пользователь:</h3><pre>${JSON.stringify(session, null, 2)}</pre>`;
+            } catch (err) {
+                resultDiv.innerHTML = `<div style="color: red;">Ошибка: ${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

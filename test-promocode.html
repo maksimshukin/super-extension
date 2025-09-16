@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Promocode</title>
+</head>
+<body>
+    <h1>Тест промокодов</h1>
+    <input type="text" id="promocode-input" placeholder="Введите промокод" value="FREE3MONTHS">
+    <button id="test-btn">Тестировать промокод</button>
+    <div id="result"></div>
+
+    <script src="../lib/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="../supabase.js"></script>
+    <script>
+        // Ждем инициализации Supabase
+        const waitForSupabase = () => {
+            return new Promise((resolve) => {
+                const checkSupabase = () => {
+                    if (window.supabaseClient) {
+                        resolve(window.supabaseClient);
+                    } else {
+                        setTimeout(checkSupabase, 100);
+                    }
+                };
+                checkSupabase();
+            });
+        };
+        
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            const promocodeInput = document.getElementById('promocode-input');
+            const promocode = promocodeInput.value.trim().toUpperCase();
+            
+            resultDiv.innerHTML = 'Тестируем...';
+            
+            try {
+                const supabase = await waitForSupabase();
+                
+                // Получаем первый тариф
+                const { data: plans, error: plansError } = await supabase.from('plans').select('*').neq('duration_months', 0).limit(1);
+                
+                if (plansError || !plans || plans.length === 0) {
+                    throw new Error('Не удалось получить тарифы');
+                }
+                
+                const planId = plans[0].id;
+                console.log('Используем тариф:', plans[0]);
+                
+                // Получаем пользователя
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session || !session.user) {
+                    throw new Error('Пользователь не авторизован');
+                }
+                
+                console.log('Пользователь:', session.user.id);
+                
+                // Тестируем функцию debug_apply_promocode
+                const { data, error } = await supabase.rpc('debug_apply_promocode', {
+                    promocode_text: promocode,
+                    user_uuid: session.user.id,
+                    plan_id: planId
+                });
+                
+                console.log('Результат apply_promocode:', { data, error });
+                resultDiv.innerHTML = `<pre>${JSON.stringify({ data, error }, null, 2)}</pre>`;
+                
+            } catch (err) {
+                console.error('Ошибка:', err);
+                resultDiv.innerHTML = `<div style="color: red;">Ошибка: ${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

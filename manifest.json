@@ -58,6 +58,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://wddhjwzwxeucaynfxvjn.supabase.co;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://wddhjwzwxeucaynfxvjn.supabase.co https://api.ipify.org;"
   }
 }

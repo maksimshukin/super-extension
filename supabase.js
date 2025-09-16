@@ -18,7 +18,40 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 // Создаем и экспортируем единственный экземпляр клиента
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        // Настройки для расширений Chrome
+        storage: {
+            getItem: (key) => {
+                return new Promise((resolve) => {
+                    chrome.storage.local.get([key], (result) => {
+                        resolve(result[key] || null);
+                    });
+                });
+            },
+            setItem: (key, value) => {
+                return new Promise((resolve) => {
+                    chrome.storage.local.set({ [key]: value }, () => {
+                        resolve();
+                    });
+                });
+            },
+            removeItem: (key) => {
+                return new Promise((resolve) => {
+                    chrome.storage.local.remove([key], () => {
+                        resolve();
+                    });
+                });
+            }
+        },
+        // Автоматически обновлять сессию
+        autoRefreshToken: true,
+        // Сохранять сессию
+        persistSession: true,
+        // Обнаруживать сессию в URL (для OAuth)
+        detectSessionInUrl: false
+    }
+});
 
 // Делаем клиент доступным глобально для других скриптов
 window.supabaseClient = supabaseClient;

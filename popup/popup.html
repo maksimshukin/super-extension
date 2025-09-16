@@ -4,359 +4,132 @@
     <meta charset="UTF-8">
     <title>SUPER</title>
     <style>
-        /* Переменные и стили, адаптированные из вашего файла */
-        :root {
-            --dbm-bg-color: #F9F9F9;
-            --dbm-panel-bg: #ffffff;
-            --dbm-input-bg: #F3F4F6;
-            --dbm-text-primary: #23272c;
-            --dbm-text-secondary: #6B7280;
-            --dbm-primary-color: #23272c;
-            --dbm-primary-hover: #4a515c;
-            --dbm-danger-color: #EF4444;
-            --dbm-radius: 20px;
-            --dbm-radius-inner: 12px;
-            --dbm-transition: all 0.2s ease-in-out;
-        }
-
-        body {
-            font-family: 'Onest', sans-serif;
-            background-color: var(--dbm-bg-color);
-            width: 380px;
-            margin: 0;
-            color: var(--dbm-text-primary);
-        }
-
+        :root { --dbm-bg-color: #F9F9F9; --dbm-panel-bg: #ffffff; --dbm-input-bg: #F3F4F6; --dbm-text-primary: #23272c; --dbm-text-secondary: #6B7280; --dbm-primary-color: #23272c; --dbm-primary-hover: #4a515c; --dbm-danger-color: #EF4444; --dbm-radius: 20px; --dbm-radius-inner: 12px; --dbm-transition: all 0.2s ease-in-out; }
+        body { font-family: 'Onest', sans-serif; background-color: var(--dbm-bg-color); width: 380px; margin: 0; color: var(--dbm-text-primary); }
         * { box-sizing: border-box; }
         .hidden { display: none !important; }
-
-        /* --- Шапка --- */
-        .popup-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid #F3F4F6;
-        }
+        .popup-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #F3F4F6; }
         .header-logo { display: flex; align-items: center; gap: 8px; font-weight: 500; }
         .header-logo img { width: 24px; height: 24px; }
         .header-version { font-size: 12px; color: var(--dbm-text-secondary); }
-        .popup-close-btn {
-            font-size: 24px; cursor: pointer; color: #aaa;
-            background: none; border: none; line-height: 1;
-        }
-        .popup-close-btn:hover { color: var(--dbm-text-primary); }
-        
-        /* --- Основной контент --- */
+        .popup-close-btn { font-size: 24px; cursor: pointer; color: #aaa; background: none; border: none; line-height: 1; }
         .popup-content { padding: 30px; }
-
-        /* --- Форма авторизации --- */
-        .tabs { display: flex; border-bottom: 1px solid #F3F4F6; margin-bottom: 24px; }
-        .tab-btn {
-            flex: 1; padding: 14px; border: none; background: none;
-            font-size: 16px; font-weight: 500; cursor: pointer;
-            color: var(--dbm-text-secondary); position: relative;
-        }
-        .tab-btn.active { color: var(--dbm-text-primary); }
-        .tab-btn.active::after {
-            content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
-            height: 2px; background-color: var(--dbm-primary-color);
-        }
-
-        .dbm-form-group {
-            margin-bottom: 20px; display: flex; flex-direction: column; text-align: left;
-        }
-        .dbm-form-group label {
-            font-weight: 500; margin-bottom: 8px; font-size: 14px;
-            color: var(--dbm-text-secondary);
-        }
-        .dbm-form-group input {
-            width: 100%; padding: 12px 16px; border: none;
-            border-radius: var(--dbm-radius-inner); height: 50px;
-            background-color: var(--dbm-input-bg); font-size: 16px;
-            font-family: inherit; color: var(--dbm-text-primary);
-        }
+        .tabs { display: flex; margin-bottom: 24px; border-radius: var(--dbm-radius-inner); background-color: var(--dbm-input-bg); padding: 4px; }
+        .tab-btn { flex: 1; padding: 12px 16px; border: none; background: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: var(--dbm-transition); color: var(--dbm-text-secondary); }
+        .tab-btn.active { background-color: white; color: var(--dbm-text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dbm-form-group { margin-bottom: 20px; display: flex; flex-direction: column; text-align: left; }
+        .dbm-form-group label { font-weight: 500; margin-bottom: 8px; font-size: 14px; color: var(--dbm-text-secondary); }
+        .dbm-form-group input { width: 100%; padding: 12px 16px; border: none; border-radius: var(--dbm-radius-inner); height: 50px; background-color: var(--dbm-input-bg); font-size: 16px; font-family: inherit; color: var(--dbm-text-primary); }
         .password-wrapper { position: relative; display: flex; align-items: center; }
         .password-wrapper input { padding-right: 45px; }
-        .toggle-password {
-            position: absolute; right: 15px; cursor: pointer;
-            width: 20px; height: 20px; background-size: contain;
-            border: none; background-color: transparent;
-        }
-
-        .strength-meter {
-            height: 6px; background-color: #eee; border-radius: 3px;
-            margin-top: 8px; display: flex;
-        }
-        .strength-bar { height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s, background-color 0.3s; }
-        .strength-bar.weak { background-color: #EF4444; }
-        .strength-bar.medium { background-color: #F59E0B; }
-        .strength-bar.strong { background-color: #10B981; }
-
-        .checkbox-group { display: flex; align-items: center; margin-bottom: 12px; text-align: left; }
-        .checkbox-group label { font-size: 14px; color: var(--dbm-text-secondary); margin-left: 10px; }
-        .checkbox-group a { color: var(--dbm-text-primary); text-decoration: underline; }
-
-        .dbm-btn {
-            width: 100%; padding: 14px 28px; border-radius: var(--dbm-radius-inner);
-            cursor: pointer; text-align: center; font-weight: 500;
-            border: none; transition: var(--dbm-transition); font-size: 16px; margin-top: 10px;
-        }
-        .dbm-btn-primary { background-color: var(--dbm-primary-color); color: white; }
-        .dbm-btn-primary:hover:not(:disabled) { background-color: var(--dbm-primary-hover); }
-        .dbm-btn:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        .error-display {
-            color: var(--dbm-danger-color); font-size: 14px;
-            margin-bottom: 15px; background-color: rgba(239, 68, 68, 0.1);
-            padding: 10px; border-radius: 8px;
-        }
-        
-        /* --- Вид для залогиненного пользователя --- */
-        #app-view .user-info { margin-bottom: 20px; text-align: center; }
-        #app-view .user-name { font-size: 20px; font-weight: 500; margin: 0; }
-        #app-view .user-email { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 4px; }
-        
-        .subscription-card {
-            background-color: var(--dbm-input-bg);
-            border-radius: var(--dbm-radius-inner);
-            padding: 20px; text-align: center; margin-bottom: 24px;
-        }
-        .subscription-card .plan-name { font-weight: 500; }
-        .subscription-card .expiry-date { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 8px; }
-        
-        #app-view .action-buttons { display: flex; flex-direction: column; gap: 12px; }
-        .dbm-btn-secondary { background-color: #F3F4F6; color: var(--dbm-text-primary); }
-        .dbm-btn-secondary:hover { background-color: #e5e7eb; }
-
-        /* --- Вкладки --- */
-        .tabs {
-            display: flex; margin-bottom: 24px; border-radius: var(--dbm-radius-inner);
-            background-color: var(--dbm-input-bg); padding: 4px;
-        }
-        .tab-btn {
-            flex: 1; padding: 12px 16px; border: none; background: none;
-            border-radius: 8px; cursor: pointer; font-weight: 500;
-            transition: var(--dbm-transition); color: var(--dbm-text-secondary);
-        }
-        .tab-btn.active {
-            background-color: white; color: var(--dbm-text-primary);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* --- Поле пароля с кнопкой показа --- */
-        .password-wrapper {
-            position: relative; display: flex; align-items: center;
-        }
-        .password-wrapper input {
-            padding-right: 45px; /* Место для кнопки */
-        }
-        .toggle-password {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; padding: 4px;
-            color: var(--dbm-text-secondary); font-size: 16px;
-        }
-        .toggle-password:hover { color: var(--dbm-text-primary); }
+        .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px; color: var(--dbm-text-secondary); font-size: 16px; }
         .toggle-password::before { content: "👁️"; }
         .toggle-password.showing::before { content: "🙈"; }
-
-        /* --- Индикатор силы пароля --- */
-        .strength-meter {
-            height: 4px; background-color: #e5e7eb; border-radius: 2px;
-            margin-top: 8px; overflow: hidden;
-        }
-        .strength-bar {
-            height: 100%; transition: var(--dbm-transition); border-radius: 2px;
-        }
+        .strength-meter { height: 4px; background-color: #e5e7eb; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .strength-bar { height: 100%; transition: var(--dbm-transition); border-radius: 2px; }
         .strength-weak { background-color: #ef4444; width: 25%; }
         .strength-fair { background-color: #f59e0b; width: 50%; }
         .strength-good { background-color: #10b981; width: 75%; }
         .strength-strong { background-color: #059669; width: 100%; }
-
-        /* --- Чекбоксы --- */
-        .checkbox-group {
-            display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            margin: 0; flex-shrink: 0; margin-top: 2px;
-        }
-        .checkbox-group label {
-            font-size: 14px; line-height: 1.4; cursor: pointer;
-        }
-        .checkbox-group a {
-            color: var(--dbm-primary-color); text-decoration: none;
-        }
-        .checkbox-group a:hover { text-decoration: underline; }
-        /* --- Стили для экрана управления подпиской --- */
-        .plans-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .plans-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .back-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-            color: var(--dbm-text-secondary);
-        }
-        .back-btn:hover {
-            color: var(--dbm-text-primary);
-        }
-
-        .plans-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .plan-card {
-            border: 1px solid #e5e7eb;
-            border-radius: var(--dbm-radius-inner);
-            padding: 16px;
-            cursor: pointer;
-            transition: var(--dbm-transition);
-            text-align: left;
-        }
-        .plan-card:hover {
-            border-color: var(--dbm-primary-color);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .plan-card.loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
+        .checkbox-group { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
+        .checkbox-group label { font-size: 14px; line-height: 1.4; cursor: pointer; }
+        .dbm-btn { width: 100%; padding: 14px 28px; border-radius: var(--dbm-radius-inner); cursor: pointer; text-align: center; font-weight: 500; border: none; transition: var(--dbm-transition); font-size: 16px; margin-top: 10px; }
+        .dbm-btn-primary { background-color: var(--dbm-primary-color); color: white; }
+        .dbm-btn-primary:hover:not(:disabled) { background-color: var(--dbm-primary-hover); }
+        .dbm-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .error-display { color: var(--dbm-danger-color); font-size: 14px; margin-bottom: 15px; background-color: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; }
+        #app-view .user-info { margin-bottom: 20px; text-align: center; }
+        #app-view .user-name { font-size: 20px; font-weight: 500; margin: 0; }
+        #app-view .user-email { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 4px; }
+        .subscription-card { background-color: var(--dbm-input-bg); border-radius: var(--dbm-radius-inner); padding: 20px; text-align: center; margin-bottom: 24px; }
+        .subscription-card .plan-name { font-weight: 500; }
+        .subscription-card .expiry-date { font-size: 14px; color: var(--dbm-text-secondary); margin-top: 8px; }
+        #app-view .action-buttons { display: flex; flex-direction: column; gap: 12px; }
+        .dbm-btn-secondary { background-color: #F3F4F6; color: var(--dbm-text-primary); }
+        .plans-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .plans-header h3 { margin: 0; font-size: 18px; }
+        .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; color: var(--dbm-text-secondary); }
+        .plans-list { display: flex; flex-direction: column; gap: 12px; }
+        .plan-card { border: 1px solid #e5e7eb; border-radius: var(--dbm-radius-inner); padding: 16px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
         .plan-card h4 { margin: 0 0 4px 0; }
         .plan-card .price { font-size: 18px; font-weight: 700; }
         .plan-card small { color: var(--dbm-text-secondary); }
-        
-        .promocode-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #F3F4F6;
-        }
-
-        .skeleton-loader {
-            height: 80px;
-            background-color: #f3f4f6;
-            border-radius: 12px;
-            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        .plan-card .dbm-btn-sm { padding: 8px 16px; height: auto; width: auto; font-size: 14px; }
+        .skeleton-loader { height: 80px; background-color: #f3f4f6; border-radius: 12px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .promocode-message { padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-top: 8px; }
+        .promocode-message.success { background-color: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .promocode-message.error { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .promocode-message::before { content: "✓ "; font-weight: bold; }
+        .promocode-message.error::before { content: "✗ "; }
+        .preloader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--dbm-text-secondary); }
+        .preloader-spinner { width: 32px; height: 32px; border: 3px solid #f3f3f3; border-top: 3px solid var(--dbm-primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .preloader-text { font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="popup-header">
-        <div class="header-logo">
-            <img src="../assets/icon128.png" alt="Logo"> <span>SUPER</span>
-        </div>
+        <div class="header-logo"><img src="../assets/icon128.png" alt="Logo"> <span>SUPER</span></div>
         <div class="header-version" id="version-display"></div>
         <button class="popup-close-btn" id="close-btn">&times;</button>
     </div>
 
     <div class="popup-content">
+        <!-- Прелоадер -->
+        <div id="preloader" class="preloader">
+            <div class="preloader-spinner"></div>
+            <div class="preloader-text">Загрузка...</div>
+        </div>
         <div id="auth-container">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="login-form">Вход</button>
-                <button class="tab-btn" data-tab="register-form">Регистрация</button>
-            </div>
-
+            <div class="tabs"><button class="tab-btn active" data-tab="login-form">Вход</button><button class="tab-btn" data-tab="register-form">Регистрация</button></div>
             <div id="login-form">
                 <div id="login-error" class="error-display hidden"></div>
-                <div class="dbm-form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email">
-                </div>
-                <div class="dbm-form-group">
-                    <label for="login-password">Пароль</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="login-password">
-                        <button class="toggle-password" data-target="login-password"></button>
-                    </div>
-                </div>
+                <div class="dbm-form-group"><label for="login-email">Email</label><input type="email" id="login-email"></div>
+                <div class="dbm-form-group"><label for="login-password">Пароль</label><div class="password-wrapper"><input type="password" id="login-password"><button class="toggle-password" data-target="login-password"></button></div></div>
                 <button id="login-btn" class="dbm-btn dbm-btn-primary" disabled>Войти</button>
             </div>
-
             <div id="register-form" class="hidden">
                 <div id="register-error" class="error-display hidden"></div>
-                <div class="dbm-form-group">
-                    <label for="register-name">Имя и Фамилия</label>
-                    <input type="text" id="register-name">
-                </div>
-                <div class="dbm-form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email">
-                </div>
-                <div class="dbm-form-group">
-                    <label for="register-password">Пароль</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="register-password">
-                        <button class="toggle-password" data-target="register-password"></button>
-                    </div>
-                    <div class="strength-meter"><div id="strength-bar" class="strength-bar"></div></div>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="tos-check">
-                    <label for="tos-check">Я согласен с <a href="#" target="_blank">офертой</a></label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="privacy-check">
-                    <label for="privacy-check">Я согласен с <a href="#" target="_blank">политикой конфиденциальности</a></label>
-                </div>
+                <div class="dbm-form-group"><label for="register-name">Имя и Фамилия</label><input type="text" id="register-name"></div>
+                <div class="dbm-form-group"><label for="register-email">Email</label><input type="email" id="register-email"></div>
+                <div class="dbm-form-group"><label for="register-password">Пароль</label><div class="password-wrapper"><input type="password" id="register-password"><button class="toggle-password" data-target="register-password"></button></div><div class="strength-meter"><div id="strength-bar" class="strength-bar"></div></div></div>
+                <div class="checkbox-group"><input type="checkbox" id="tos-check"><label for="tos-check">Я согласен с <a href="#" target="_blank">офертой</a></label></div>
+                <div class="checkbox-group"><input type="checkbox" id="privacy-check"><label for="privacy-check">Я согласен с <a href="#" target="_blank">политикой конфиденциальности</a></label></div>
                 <button id="register-btn" class="dbm-btn dbm-btn-primary" disabled>Зарегистрироваться</button>
             </div>
         </div>
 
         <div id="app-view" class="hidden">
-            <div class="user-info">
-                <h3 id="user-name" class="user-name"></h3>
-                <p id="user-email" class="user-email"></p>
-            </div>
-            <div class="subscription-card">
-                <p>Ваша подписка:</p>
-                <h4 id="plan-name" class="plan-name"></h4>
-                <p id="expiry-date" class="expiry-date"></p>
-            </div>
-            <div class="action-buttons">
-                <button id="manage-btn" class="dbm-btn dbm-btn-primary">Управлять подпиской</button>
-                <button id="support-btn" class="dbm-btn dbm-btn-secondary">Поддержка</button>
-                <button id="logout-btn" class="dbm-btn dbm-btn-secondary">Выйти</button>
-            </div>
+            <div class="user-info"><h3 id="user-name" class="user-name"></h3><p id="user-email" class="user-email"></p></div>
+            <div class="subscription-card"><p>Ваша подписка:</p><h4 id="plan-name" class="plan-name"></h4><p id="expiry-date" class="expiry-date"></p></div>
+            <div class="action-buttons"><button id="manage-btn" class="dbm-btn dbm-btn-primary">Управлять подпиской</button><button id="support-btn" class="dbm-btn dbm-btn-secondary">Поддержка</button><button id="logout-btn" class="dbm-btn dbm-btn-secondary">Выйти</button></div>
         </div>
+
         <div id="plans-view" class="hidden">
-            <div class="plans-header">
-                <button id="back-to-user-view-btn" class="back-btn">&larr;</button>
-                <h3>Управление подпиской</h3>
-            </div>
-            <div id="plans-container" class="plans-list">
-                <div class="skeleton-loader"></div>
-                <div class="skeleton-loader"></div>
-            </div>
-            <div class="promocode-section">
-                <div class="dbm-form-group">
-                    <label for="promocode-input">Промокод</label>
-                    <input type="text" id="promocode-input" placeholder="SALE2024">
+            <div class="plans-header"><button id="back-to-user-view-btn" class="back-btn">&larr;</button><h3>Управление подпиской</h3></div>
+            
+            <!-- Поле для промокода -->
+            <div class="promocode-section" style="margin-bottom: 20px;">
+                <div class="dbm-form-group" style="margin-bottom: 12px;">
+                    <label for="promocode-input">Промокод (необязательно)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="promocode-input" placeholder="Введите промокод" style="flex: 1;">
+                        <button id="apply-promocode-btn" class="dbm-btn-secondary" style="width: auto; padding: 12px 16px; margin: 0;">Применить</button>
+                        <button id="reset-promocode-btn" class="dbm-btn-secondary" style="width: auto; padding: 12px 16px; margin: 0; display: none;">Сбросить</button>
+                    </div>
                 </div>
+                <div id="promocode-message" class="promocode-message hidden"></div>
             </div>
+            
+            <div id="plans-container" class="plans-list"></div>
             <p id="plans-error" class="error-display hidden"></p>
         </div>
     </div>
 
-    <!-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: ДОБАВЛЯЕМ ПОДКЛЮЧЕНИЕ СКРИПТОВ -->
     <script src="../lib/supabase.min.js"></script>
-    <script src="config.js"></script>         
-    <script src="../supabase.js"></script>    
+    <script src="config.js"></script>
+    <script src="../supabase.js"></script>
     <script src="popup.js"></script>
-
 </body>
 </html>
-

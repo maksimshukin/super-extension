@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Payment</title>
+</head>
+<body>
+    <h1>Тест функции create-payment</h1>
+    <button id="test-btn">Тестировать</button>
+    <div id="result"></div>
+
+    <script src="../lib/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="../supabase.js"></script>
+    <script>
+        // Ждем инициализации Supabase
+        const waitForSupabase = () => {
+            return new Promise((resolve) => {
+                const checkSupabase = () => {
+                    if (window.supabaseClient) {
+                        resolve(window.supabaseClient);
+                    } else {
+                        setTimeout(checkSupabase, 100);
+                    }
+                };
+                checkSupabase();
+            });
+        };
+        
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Тестируем...';
+            
+            try {
+                const supabase = await waitForSupabase();
+                
+                // Получаем первый тариф
+                const { data: plans, error: plansError } = await supabase.from('plans').select('*').neq('duration_months', 0).limit(1);
+                
+                if (plansError || !plans || plans.length === 0) {
+                    throw new Error('Не удалось получить тарифы');
+                }
+                
+                const planId = plans[0].id;
+                console.log('Используем тариф:', plans[0]);
+                
+                // Тестируем функцию
+                const { data, error } = await supabase.functions.invoke('create-payment', {
+                    method: 'POST',
+                    body: {
+                        plan_id: planId
+                    }
+                });
+                
+                console.log('Результат:', { data, error });
+                resultDiv.innerHTML = `<pre>${JSON.stringify({ data, error }, null, 2)}</pre>`;
+                
+            } catch (err) {
+                console.error('Ошибка:', err);
+                resultDiv.innerHTML = `<div style="color: red;">Ошибка: ${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
