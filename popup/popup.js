@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Ждем, пока config.js и supabase.js точно загрузятся
-    // Эта простая проверка решает большинство проблем с порядком загрузки
     if (!window.supabaseClient) {
         document.body.innerHTML = `<div style="padding: 20px; color: red;">Ошибка: Клиент Supabase не был загружен. Проверьте консоль.</div>`;
         return;
@@ -18,15 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ПОЛУЧЕНИЕ ВСЕХ ЭЛЕМЕНТОВ UI ---
     const authContainer = getEl('auth-container');
     const appView = getEl('app-view');
-    const plansView = getEl('plans-view'); // Новый экран подписок
+    const plansView = getEl('plans-view');
     const loginBtn = getEl('login-btn');
     const registerBtn = getEl('register-btn');
     const logoutBtn = getEl('logout-btn');
     const manageBtn = getEl('manage-btn');
-    const backToUserViewBtn = getEl('back-to-user-view-btn'); // Кнопка возврата
-    const plansContainer = getEl('plans-container'); // Контейнер тарифов
-    const promocodeInput = getEl('promocode-input'); // Поле промокода
-    const plansErrorEl = getEl('plans-error'); // Элемент ошибки для тарифов
+    const backToUserViewBtn = getEl('back-to-user-view-btn');
+    const plansContainer = getEl('plans-container');
+    const promocodeInput = getEl('promocode-input');
+    const plansErrorEl = getEl('plans-error');
     const loginEmailInput = getEl('login-email');
     const loginPasswordInput = getEl('login-password');
     const registerNameInput = getEl('register-name');
@@ -97,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 getEl('plan-name').textContent = `Истекла (${sub['Тариф'] || 'неизвестный'})`;
                 getEl('expiry-date').textContent = 'Пожалуйста, продлите подписку';
                 break;
-            default: // free, trialing, etc.
+            default:
                 getEl('plan-name').textContent = 'Бесплатный (триал)';
                 getEl('expiry-date').textContent = 'Ограниченный доступ';
                 break;
@@ -166,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- ВАША ЛОГИКА ВАЛИДАЦИИ И ИНТЕРФЕЙСА (полностью сохранена) ---
+    // --- ЛОГИКА ВАЛИДАЦИИ И ИНТЕРФЕЙСА ---
     getEl('version-display').textContent = 'v' + chrome.runtime.getManifest().version;
     getEl('close-btn').addEventListener('click', () => window.close());
     
@@ -221,28 +220,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ОБРАБОТЧИКИ СОБЫТИЙ АВТОРИЗАЦИИ ---
     registerBtn.addEventListener('click', async () => {
         hideError(registerErrorDiv);
-        const { data, error } = await supabase.auth.signUp({
-            email: registerEmailInput.value,
-            password: registerPasswordInput.value,
-            options: { data: { full_name: registerNameInput.value } }
-        });
-        if (error) {
-            showError(registerErrorDiv, error.message);
-        } else {
-            alert('Регистрация успешна! Проверьте почту для подтверждения аккаунта.');
+        registerBtn.disabled = true;
+        registerBtn.textContent = 'Регистрация...';
+
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email: registerEmailInput.value,
+                password: registerPasswordInput.value,
+                options: { data: { full_name: registerNameInput.value } }
+            });
+
+            if (error) {
+                // Вызываем новую функцию для детальной обработки ошибок
+                handleAuthError(error, registerErrorDiv);
+            } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+                showError(registerErrorDiv, 'Пользователь с таким email уже существует, но требуется подтверждение. Проверьте почту.');
+            }
+             else {
+                alert('Регистрация успешна! Проверьте почту для подтверждения аккаунта.');
+                // Опционально: можно автоматически переключить на вкладку входа
+                getEl('login-email').value = registerEmailInput.value;
+                document.querySelector('.tab-btn[data-tab="login-form"]').click();
+            }
+        } finally {
+            registerBtn.disabled = false;
+            registerBtn.textContent = 'Зарегистрироваться';
         }
     });
 
     loginBtn.addEventListener('click', async () => {
         hideError(loginErrorDiv);
-        const { error } = await supabase.auth.signInWithPassword({
-            email: loginEmailInput.value,
-            password: loginPasswordInput.value,
-        });
-        if (error) {
-            showError(loginErrorDiv, 'Неверный email или пароль.');
-        } else {
-            updateUserUI(); // Обновляем UI после входа
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Вход...';
+
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: loginEmailInput.value,
+                password: loginPasswordInput.value,
+            });
+
+            if (error) {
+                // Вызываем новую функцию для детальной обработки ошибок
+                handleAuthError(error, loginErrorDiv);
+            } else {
+                updateUserUI(); // Обновляем UI после входа
+            }
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Войти';
         }
     });
 
@@ -254,6 +279,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ОБРАБОТЧИКИ СОБЫТИЙ ДЛЯ ПОДПИСКИ ---
     manageBtn.addEventListener('click', showPlansView);
     backToUserViewBtn.addEventListener('click', () => switchView(appView));
+
+    // --- НОВАЯ ФУНКЦИЯ ОБРАБОТКИ ОШИБОК ---
+    function handleAuthError(error, errorDiv) {
+        let message = 'Произошла неизвестная ошибка. Попробуйте снова.';
+
+        // Анализируем текст ошибки от Supabase
+        if (error.message.includes('User already registered')) {
+            message = 'Пользователь с таким email уже зарегистрирован.';
+        } else if (error.message.includes('Invalid login credentials')) {
+            message = 'Неверный email или пароль.';
+        } else if (error.message.includes('Password should be stronger')) {
+            message = 'Пароль слишком слабый. Используйте буквы, цифры и символы.';
+        } else if (error.message.includes('Unable to validate email address')) {
+            message = 'Некорректный формат email адреса.';
+        } else if (error.message.includes('Email rate limit exceeded')) {
+            message = 'Слишком много попыток. Пожалуйста, подождите и попробуйте снова.';
+        } else if (error.message.includes('Email link is invalid or has expired')) {
+            message = 'Ссылка для подтверждения недействительна или устарела.';
+        } else if (error.message.includes('user is banned')) {
+            message = 'Этот пользователь заблокирован.';
+        }
+        
+        showError(errorDiv, message);
+    }
+
 
     // --- ПЕРВЫЙ ЗАПУСК ---
     updateUserUI();

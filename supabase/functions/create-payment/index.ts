@@ -15,7 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const { plan_id } = await req.json();
+    const { plan_id, promocode } = await req.json();
+    
     // Создаем клиент от имени пользователя, который сделал запрос
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -33,7 +34,32 @@ serve(async (req) => {
       .single();
     if (planError || !plan) throw new Error('Plan not found');
 
-    const finalPrice = plan.price_per_month * plan.duration_months;
+    let finalPrice = plan.price_per_month * plan.duration_months;
+    let promocode_id = null;
+
+    // --- ИСПРАВЛЕННАЯ ЛОГИКА ПРОВЕРКИ ПРОМОКОДА ---
+    if (promocode) {
+      // Используем supabaseAdmin для обхода RLS
+      const { data: promoData, error: promoError } = await supabaseAdmin
+        .from('promocodes')
+        .select('*')
+        .eq('code', promocode)
+        .single();
+
+      if (promoError) {
+        throw new Error('Промокод не найден.');
+      }
+      
+      if (promoData && promoData.is_active && new Date(promoData.expires_at) > new Date()) {
+          const discountMultiplier = 1 - (promoData.discount_percent / 100);
+          finalPrice *= discountMultiplier;
+          promocode_id = promoData.id;
+      } else {
+          throw new Error('Промокод недействителен или истек.');
+      }
+    }
+    // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ---
+
     const idempotenceKey = uuidv4();
 
     const yookassaResponse = await fetch('https://api.yookassa.ru/v3/payments', {
@@ -53,15 +79,15 @@ serve(async (req) => {
         payment_method_data: { type: 'bank_card' },
         confirmation: {
           type: 'redirect',
-          // Укажите ID вашего расширения вместо YOUR_EXTENSION_ID
           return_url: `chrome-extension://gaonojlhdifcjhbcjojoegmnlkhgkame/options/options.html?status=success`, 
         },
         capture: true,
         description: `Подписка на тариф "${plan.name}"`,
-        save_payment_method: true, // Включаем рекуррентные платежи
+        save_payment_method: true,
         metadata: {
           user_id: user.id,
           plan_id: plan.id,
+          promocode_id: promocode_id,
         },
       }),
     });
