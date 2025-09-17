@@ -50,6 +50,9 @@
         "features/super-slider/super-slider.css",
         "features/tilda-mods/tilda-mods.js",
         "features/tilda-mods/tilda-mods.css",
+        "supabase.js",
+        "lib/supabase.min.js",
+        "popup/config.js",
         "assets/*"
       ],
       "matches": [

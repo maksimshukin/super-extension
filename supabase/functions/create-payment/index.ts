@@ -1,25 +1,9 @@
+// supabase/functions/create-payment/index.ts - ОБНОВЛЕННАЯ ВЕРСИЯ
+
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
 import { v4 as uuidv4 } from 'https://deno.land/std@0.177.0/uuid/mod.ts'
-
-// Проверяем наличие переменных окружения при старте функции
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const yookassaShopId = Deno.env.get('YOOKASSA_SHOP_ID');
-const yookassaSecretKey = Deno.env.get('YOOKASSA_SECRET_KEY');
-
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error('Отсутствуют необходимые переменные окружения Supabase.');
-}
-
-// YooKassa ключи могут отсутствовать для тестирования
-const isTestMode = !yookassaShopId || !yookassaSecretKey;
-if (isTestMode) {
-  console.log('YooKassa credentials not configured - running in test mode');
-}
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+import { corsHeaders } from '../_shared/cors.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -27,123 +11,81 @@ serve(async (req) => {
   }
 
   try {
-    // Получаем plan_id и promocode из тела запроса
-    const { plan_id, promocode } = await req.json();
-    console.log('Получены параметры:', { plan_id, promocode });
-    
-    if (!plan_id) {
-      throw new Error('Необходимо передать plan_id.');
-    }
-    
-    // Если есть промокод, проверяем его
-    let promocodeInfo = null;
-    if (promocode) {
-      console.log('Проверяем промокод:', { promocode, user_id: user.id, plan_id });
-      const { data: promocodeData, error: promocodeError } = await supabaseAdmin.rpc('apply_promocode', {
-        promocode_text: promocode,
-        user_uuid: user.id,
-        plan_id: plan_id
-      });
-      
-      if (promocodeError) {
-        throw new Error(`Ошибка промокода: ${promocodeError.message}`);
-      }
-      
-      if (!promocodeData.success) {
-        throw new Error(promocodeData.message);
-      }
-      
-      promocodeInfo = promocodeData;
-      
-      // Если это бесплатные месяцы, создаем подписку без оплаты
-      if (promocodeData.promocode.type === 'free_months') {
-        const { data: subscriptionData, error: subscriptionError } = await supabaseAdmin.rpc('apply_promocode_to_subscription', {
-          promocode_text: promocode,
-          user_uuid: user.id,
-          plan_id: plan_id
-        });
-        
-        if (subscriptionError) {
-          throw new Error(`Ошибка создания подписки: ${subscriptionError.message}`);
-        }
-        
-        return new Response(JSON.stringify({ 
-          success: true,
-          subscription_created: true,
-          message: subscriptionData.message,
-          promocode_info: promocodeInfo
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    const yookassaShopId = Deno.env.get('YOOKASSA_SHOP_ID')
+    const yookassaSecretKey = Deno.env.get('YOOKASSA_SECRET_KEY')
+
+    if (!yookassaShopId || !yookassaSecretKey) {
+      throw new Error('YooKassa credentials are not configured in environment variables.')
     }
 
-    const { data: plan, error: planError } = await supabaseAdmin.from('plans').select('*').eq('id', plan_id).single();
-    if (planError || !plan) throw new Error('Выбранный тариф не найден.');
+    // Создаем аутентифицированный клиент для получения пользователя
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
 
-    let finalPrice = plan.price_per_month * plan.duration_months;
-    
-    // Применяем скидку от промокода
-    if (promocodeInfo && promocodeInfo.discount) {
-      finalPrice = Math.max(0, finalPrice - promocodeInfo.discount.amount);
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Authentication required.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // Получаем от клиента УЖЕ рассчитанную сумму и ID
+    const { plan_id, promocode_id, amount } = await req.json()
+    if (!plan_id || !amount || amount <= 0) {
+      throw new Error('Invalid request: plan_id and a positive amount are required.')
+    }
+
+    const idempotenceKey = uuidv4()
+
+    const paymentPayload = {
+      amount: {
+        value: amount.toFixed(2),
+        currency: 'RUB'
+      },
+      payment_method_data: {
+        type: 'bank_card'
+      },
+      confirmation: {
+        type: 'redirect',
+        return_url: `chrome-extension://${Deno.env.get('CHROME_EXTENSION_ID')}/options/options.html?status=success`
+      },
+      capture: true,
+      description: `Оплата подписки (plan: ${plan_id})`,
+      metadata: {
+        user_id: user.id,
+        plan_id: plan_id,
+        promocode_id: promocode_id || null
+      }
     }
     
-    // Если в тестовом режиме, возвращаем тестовую ссылку
-    if (isTestMode) {
-      return new Response(JSON.stringify({ 
-        confirmation_url: 'https://yoomoney.ru/checkout/payments/v2/show?orderId=test_order_' + Date.now(),
-        test_mode: true,
-        message: 'Test mode - YooKassa credentials not configured',
-        plan_name: plan.name,
-        original_price: plan.price_per_month * plan.duration_months,
-        final_price: finalPrice,
-        promocode_info: promocodeInfo
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    const idempotenceKey = uuidv4();
-
-    const yookassaResponse = await fetch('https://api.yookassa.ru/v3/payments', {
+    // Отправляем запрос в ЮKassa
+    const response = await fetch('https://api.yookassa.ru/v3/payments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Idempotence-Key': idempotenceKey,
         'Authorization': 'Basic ' + btoa(`${yookassaShopId}:${yookassaSecretKey}`),
       },
-      body: JSON.stringify({
-        amount: { value: finalPrice.toFixed(2), currency: 'RUB' },
-        payment_method_data: { type: 'bank_card' },
-        // Используем стандартный return_url для расширения
-        confirmation: { 
-          type: 'redirect', 
-          return_url: 'chrome-extension://gaonojlhdifcjhbcjojoegmnlkhgkame/options/options.html?status=success'
-        },
-        capture: true,
-        description: `Подписка на тариф "${plan.name}"`,
-        save_payment_method: true,
-        metadata: { user_id: user.id, plan_id: plan.id },
-      }),
-    });
+      body: JSON.stringify(paymentPayload),
+    })
 
-    const paymentData = await yookassaResponse.json();
-    if (!yookassaResponse.ok || !paymentData.confirmation?.confirmation_url) {
-      console.error('Yookassa API Error:', paymentData);
-      throw new Error(paymentData.description || 'Ошибка при создании платежа в ЮKassa.');
+    const responseData = await response.json()
+
+    if (!response.ok) {
+        throw new Error(`YooKassa API Error: ${responseData.description || response.statusText}`);
     }
 
-    return new Response(JSON.stringify({ confirmation_url: paymentData.confirmation.confirmation_url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ confirmation_url: responseData.confirmation.confirmation_url }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
+    })
 
   } catch (error) {
-    console.error('Edge Function Error:', error.message);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.toString(),
-      stack: error.stack 
-    }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-      status: 400 
-    });
+    console.error('Error creating payment:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400
+    })
   }
 })

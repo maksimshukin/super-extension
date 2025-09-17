@@ -4,7 +4,7 @@ console.log('[MAIN] SUPER расширение загружается...');
 const dbmSUPER_APP = {
     isPanelOpen: false,
     elements: {},
-    userSubscription: { status: 'free' }, // Статус по умолчанию
+    userSubscription: { status: 'logged_out' }, // Статус по умолчанию
 
     // Каталог решений с метками доступа (isPaid)
     solutions: {
@@ -14,12 +14,12 @@ const dbmSUPER_APP = {
             js: 'features/super-hover/super-hover.js',
             css: 'features/super-hover/super-hover.css',
             initializer: 'dbmHoverArchitect',
-            isPaid: true // Платное решение
+            requiresSubscription: true // ПЛАТНОЕ РЕШЕНИЕ
         },
         'super-grid': {
             title: 'Super Grid',
             description: 'Продвинутая сеточная система (в разработке)',
-            isPaid: true
+            requiresSubscription: true // ПЛАТНОЕ РЕШЕНИЕ
         },
         'super-slider': {
             title: 'Super Slider',
@@ -27,74 +27,235 @@ const dbmSUPER_APP = {
             js: 'features/super-slider/super-slider.js',
             css: 'features/super-slider/super-slider.css',
             initializer: 'dbmSwiperArchitect',
-            isPaid: true // Платное решение
+            requiresSubscription: true // ПЛАТНОЕ РЕШЕНИЕ
         },
         'tilda-mods': {
             title: 'Tilda Mods',
             description: 'Запустить классические моды для Tilda',
             js: 'features/tilda-mods/tilda-mods.js',
             initializer: null,
-            isPaid: false // Бесплатное решение
+            requiresSubscription: false // БЕСПЛАТНОЕ РЕШЕНИЕ
         }
     },
 
     async init() {
         console.log('[MAIN] dbmSUPER_APP инициализируется...');
-        
-        // Загружаем клиент Supabase, если его еще нет
-        if (!window.supabaseClient) {
-            await this.loadScript('../supabase.js', false);
-        }
-
-        // Проверяем статус пользователя и его подписку
-        this.userSubscription = await this.checkAuthAndSubscription();
-
-        // **ГЛАВНАЯ ЛОГИКА**: Показываем UI только если пользователь авторизован
-        if (this.userSubscription.status !== 'logged_out' && this.userSubscription.status !== 'error') {
-            console.log(`[MAIN] Пользователь авторизован. Статус подписки: ${this.userSubscription.status}`);
-            this.buildUI();
-        } else {
-            console.log('[MAIN] Пользователь не авторизован, UI не будет создан.');
-        }
-    },
-
-    async checkAuthAndSubscription() {
         try {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) return { status: 'logged_out' };
-
-            const { data, error } = await window.supabaseClient
-                .from('subscriptions_view')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .single();
-            
-            if (error || !data) return { status: 'free' };
-            
-            const endsAt = data['Активна до'] ? new Date(data['Активна до']) : null;
-            if (data['Статус'] === 'active' && endsAt > new Date()) {
-                return { status: 'active' };
+            // Инициализируем Supabase клиент
+            await this.initSupabaseClient();
+            if (!window.supabaseClient) {
+                throw new Error('Клиент Supabase не был создан.');
             }
 
-            return { status: 'free' }; // Если подписка истекла или неактивна
-        } catch (e) {
-            console.error('[MAIN] Ошибка проверки статуса:', e);
-            return { status: 'error' };
+            // ГЛАВНОЕ ИЗМЕНЕНИЕ: Слушаем изменения состояния авторизации В РЕАЛЬНОМ ВРЕМЕНИ
+            window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log(`[MAIN] Auth state changed: ${event}`);
+                // При любом изменении (вход, выход) полностью перепроверяем статус и перестраиваем UI
+                this.handleUserStatusChange(session);
+            });
+
+            // Первоначальная проверка при загрузке страницы
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            await this.handleUserStatusChange(session);
+
+        } catch (error) {
+            console.error('[MAIN] Критическая ошибка при инициализации:', error);
+            this.destroyUI(); // Если что-то пошло не так, убираем все элементы
         }
     },
 
-    buildUI() {
-        if (this.elements.floatingIcon) return; // UI уже создан
-        this.createFloatingIcon();
-        this.createSolutionsWindow();
-        this.addEventListeners();
 
-        document.addEventListener('super-panel-closed', () => {
-            this.isPanelOpen = false;
-            this.elements.floatingIcon.classList.remove('super-hidden');
-        });
+    async initSupabaseClient() {
+        try {
+            console.log('[MAIN] Инициализируем Supabase клиент...');
+            
+            // Загружаем библиотеку Supabase
+            await this.loadScript('lib/supabase.min.js', false);
+            
+            // Ждем, пока библиотека загрузится
+            let attempts = 0;
+            const maxAttempts = 50;
+            while (typeof supabase === 'undefined' && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (typeof supabase === 'undefined') {
+                throw new Error('Библиотека Supabase не загружена');
+            }
+            
+            // Загружаем конфигурацию
+            await this.loadScript('popup/config.js', false);
+            
+            // Ждем, пока конфигурация загрузится
+            attempts = 0;
+            while (!window.dbmSUPER_SUPABASE_CONFIG && attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.dbmSUPER_SUPABASE_CONFIG) {
+                throw new Error('Конфигурация Supabase не загружена');
+            }
+            
+            const { url, anonKey } = window.dbmSUPER_SUPABASE_CONFIG;
+            if (!url || !anonKey) {
+                throw new Error('URL или anonKey не установлены в конфигурации');
+            }
+            
+            // Создаем клиент Supabase
+            window.supabaseClient = supabase.createClient(url, anonKey, {
+                auth: {
+                    storage: {
+                        getItem: (key) => {
+                            return new Promise((resolve) => {
+                                chrome.storage.local.get([key], (result) => {
+                                    resolve(result[key] || null);
+                                });
+                            });
+                        },
+                        setItem: (key, value) => {
+                            return new Promise((resolve) => {
+                                chrome.storage.local.set({ [key]: value }, () => {
+                                    resolve();
+                                });
+                            });
+                        },
+                        removeItem: (key) => {
+                            return new Promise((resolve) => {
+                                chrome.storage.local.remove([key], () => {
+                                    resolve();
+                                });
+                            });
+                        }
+                    },
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: false
+                }
+            });
+            
+            console.log('[MAIN] ✅ Supabase клиент инициализирован');
+            
+        } catch (error) {
+            console.error('[MAIN] ❌ Ошибка инициализации Supabase:', error);
+            throw error;
+        }
     },
+    async handleUserStatusChange(session) {
+        // Сначала всегда полностью очищаем старый UI, чтобы избежать дубликатов
+        this.destroyUI();
 
+        if (session) {
+            // Пользователь залогинен, теперь проверяем подписку
+            await this.checkSubscriptionStatus(session.user.id);
+            // После проверки строим UI с учётом нового статуса
+            this.buildUI();
+        } else {
+            // Пользователь не залогинен
+            this.userSubscription.status = 'logged_out';
+            console.log('[MAIN] Пользователь не авторизован. UI не будет создан.');
+        }
+    },
+    async checkSubscriptionStatus(userId) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('subscriptions')
+                .select('status, ends_at')
+                .eq('user_id', userId)
+                .in('status', ['active', 'trialing'])
+                .gt('ends_at', new Date().toISOString())
+                .order('ends_at', { ascending: false })
+                .limit(1)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') throw error;
+
+            if (data) {
+                this.userSubscription.status = data.status; // 'active' или 'trialing'
+            } else {
+                this.userSubscription.status = 'free'; // Активных подписок не найдено, значит статус "бесплатный"
+            }
+        } catch (e) {
+            console.error('[MAIN] Ошибка проверки подписки:', e);
+            this.userSubscription.status = 'error';
+        }
+        console.log(`[MAIN] Статус подписки установлен: ${this.userSubscription.status}`);
+    },
+// core/main.js - ЗАМЕНИТЬ ТОЛЬКО ЭТУ ФУНКЦИЮ
+
+async checkAuthAndSubscription() {
+    try {
+        if (!window.supabaseClient) {
+            this.isAuthorized = false;
+            this.userSubscription.status = 'error';
+            throw new Error('Клиент Supabase недоступен.');
+        }
+        
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+            this.isAuthorized = false;
+            this.userSubscription.status = 'logged_out';
+            return;
+        }
+
+        this.isAuthorized = true;
+        console.log('[MAIN] Пользователь авторизован:', session.user.email);
+
+        // ОБНОВЛЕННЫЙ ЗАПРОС к новой таблице 'subscriptions'
+        const { data, error } = await window.supabaseClient
+            .from('subscriptions')
+            .select('status, ends_at')
+            .in('status', ['active', 'trialing']) // Ищем только активные или триальные
+            .gt('ends_at', new Date().toISOString()) // Дата окончания должна быть в будущем
+            .order('ends_at', { ascending: false }) // Берем самую "свежую" подписку
+            .limit(1)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // Игнорируем ошибку "не найдено строк"
+            throw error;
+        }
+        
+        if (data) {
+            this.userSubscription.status = data.status; // 'active' или 'trialing'
+        } else {
+            this.userSubscription.status = 'free'; // Если активных подписок не найдено
+        }
+
+    } catch (e) {
+        console.error('[MAIN] Ошибка проверки статуса:', e);
+        this.isAuthorized = false; // Считаем неавторизованным при ошибке
+        this.userSubscription.status = 'error';
+    }
+},
+
+buildUI() {
+    const availableSolutions = this.getAvailableSolutions();
+    if (availableSolutions.length === 0) {
+        console.log('[MAIN] Нет доступных решений для текущего статуса подписки. UI не будет создан.');
+        return;
+    }
+
+    console.log(`[MAIN] Доступно решений: ${availableSolutions.length}. Создаем UI...`);
+    this.createFloatingIcon();
+    this.createSolutionsWindow(availableSolutions);
+    this.addEventListeners();
+},
+getAvailableSolutions() {
+    const status = this.userSubscription.status;
+    const allSolutions = Object.entries(this.solutions);
+
+    if (status === 'active' || status === 'trialing') {
+        // Если подписка активна, возвращаем ВСЕ решения
+        return allSolutions;
+    } else if (status === 'free') {
+        // Если подписка истекла (статус 'free'), возвращаем ТОЛЬКО бесплатные
+        return allSolutions.filter(([key, solution]) => !solution.requiresSubscription);
+    } else {
+        // Для всех остальных статусов ('logged_out', 'error') ничего не показываем
+        return [];
+    }
+},
     destroyUI() {
         this.elements.floatingIcon?.remove();
         this.elements.solutionsWindow?.remove();
@@ -108,31 +269,43 @@ const dbmSUPER_APP = {
         document.body.appendChild(this.elements.floatingIcon);
     },
 
-    createSolutionsWindow() {
+    createSolutionsWindow(availableSolutions) {
         this.elements.solutionsWindow = document.createElement('div');
         this.elements.solutionsWindow.id = 'super-solutions-window';
         this.elements.solutionsWindow.classList.add('super-hidden');
 
         let cardsHTML = '';
-        for (const key in this.solutions) {
-            const solution = this.solutions[key];
-            const hasAccess = this.userSubscription.status === 'active' || !solution.isPaid;
-            
+        const hasActiveSubscription = this.userSubscription.status === 'active' || this.userSubscription.status === 'trialing';
+
+        for (const [key, solution] of availableSolutions) {
+            // Иконка замка 🔒 показывается только для платных решений, если у пользователя НЕТ активной подписки.
+            // Но сама карточка будет неактивна (disabled) если у пользователя нет доступа
+             const isPaid = solution.requiresSubscription;
+             const isDisabled = isPaid && !hasActiveSubscription;
+             const lockIcon = isPaid ? '🔒' : '';
+
             cardsHTML += `
-                <div class="card ${hasAccess ? '' : 'disabled'}" data-solution-key="${key}">
-                    <h4>${solution.title} ${!hasAccess ? '🔒' : ''}</h4>
+                <div class="card ${isDisabled ? 'disabled' : ''}" data-solution-key="${key}">
+                    <h4>${solution.title} ${lockIcon}</h4>
                     <p>${solution.description}</p>
                 </div>`;
         }
         
         this.elements.solutionsWindow.innerHTML = cardsHTML;
-        if (this.userSubscription.status !== 'active') {
-             this.elements.solutionsWindow.innerHTML += '<p class="upgrade-prompt">Оформите подписку для полного доступа</p>';
+        
+        // Показываем призыв к покупке, только если у пользователя нет активной подписки
+        if (!hasActiveSubscription) {
+             this.elements.solutionsWindow.innerHTML += '<p class="upgrade-prompt">Оформите подписку для полного доступа ко всем решениям</p>';
         }
 
         document.body.appendChild(this.elements.solutionsWindow);
     },
-
+    destroyUI() {
+        console.log('[MAIN] Уничтожаем старый UI...');
+        this.elements.floatingIcon?.remove();
+        this.elements.solutionsWindow?.remove();
+        this.elements = {}; // Очищаем объект
+    },
     addEventListeners() {
         this.elements.floatingIcon.addEventListener('click', () => {
             if (this.isPanelOpen) return;
@@ -255,10 +428,11 @@ const dbmSUPER_APP = {
     }
 };
 
-// --- Безопасная инициализация ---
-try {
-    dbmSUPER_APP.init();
+(async () => {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => dbmSUPER_APP.init());
+    } else {
+        dbmSUPER_APP.init();
+    }
     window.dbmSUPER_APP = dbmSUPER_APP;
-} catch (error) {
-    console.error('[MAIN] Ошибка при инициализации dbmSUPER_APP:', error);
-}
+})();
